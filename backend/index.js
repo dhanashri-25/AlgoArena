@@ -30,6 +30,7 @@ app.use("/api/auth", authRouter);
 app.get("/", (req, res) => {
   res.send("server is running");
 });
+// app.post("/run",async(req,res)=>)
 app.listen(PORT, () => {
   console.log(`server running on port ${PORT}`);
 });
