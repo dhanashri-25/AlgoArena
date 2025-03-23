@@ -1,7 +1,16 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Split from "react-split";
-import { ArrowLeft, User, RefreshCw, Play, Upload, Moon, Sun, X } from "lucide-react";
+import {
+  ArrowLeft,
+  User,
+  RefreshCw,
+  Play,
+  Upload,
+  Moon,
+  Sun,
+  X,
+} from "lucide-react";
 import Editor from "@monaco-editor/react";
 import problems from "../utils/problems.json";
 import DetectMultipleFaces from "./DetectMultipleFaces.jsx";
@@ -14,29 +23,13 @@ const languages = [
   { label: "Java", value: "java", id: 62 },
   { label: "JavaScript", value: "javascript", id: 63 },
   { label: "Python 3", value: "python", id: 71 },
-  { label: "Go", value: "go", id: 60 },
-  { label: "Rust", value: "rust", id: 73 },
-  { label: "Kotlin", value: "kotlin", id: 78 },
-  { label: "Swift", value: "swift", id: 83 },
-  { label: "TypeScript", value: "typescript", id: 74 },
-  { label: "C#", value: "csharp", id: 51 },
-  { label: "PHP", value: "php", id: 68 },
-  { label: "Ruby", value: "ruby", id: 72 },
-  { label: "Perl", value: "perl", id: 85 },
-  { label: "Lua", value: "lua", id: 64 },
-  { label: "Haskell", value: "haskell", id: 61 },
-  { label: "R", value: "r", id: 80 },
-  { label: "Scala", value: "scala", id: 81 },
-  { label: "Bash", value: "bash", id: 76 },
-  { label: "Dart", value: "dart", id: 90 },
-  { label: "Pascal", value: "pascal", id: 77 },
-  { label: "Objective-C", value: "objective-c", id: 79 },
+  // ...other languages
 ];
 
 const difficultyColors = {
   Easy: "bg-green-600",
   Medium: "bg-yellow-600",
-  Hard: "bg-red-600"
+  Hard: "bg-red-600",
 };
 
 const Code = () => {
@@ -53,13 +46,20 @@ const Code = () => {
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [isRunning, setIsRunning] = useState(false);
   const [testCases, setTestCases] = useState([]);
-  const videoRef = useRef(null);
   const [videoElement, setVideoElement] = useState(null);
-  
-  const getRandomProblems = () => {
-    let shuffled = [...problems].sort(() => 0.5 - Math.random());
-    setRandomProblems(shuffled.slice(0, 4));
-    setSelectedProblem(shuffled[0]); // Set first problem as default
+
+  const getRandomProblems = async () => {
+    try {
+      const response = await fetch("http://localhost:5000/api/current-contest");
+      const data = await response.json();
+      // data.problems should be an array of question objects from MongoDB
+      setRandomProblems(data.problems);
+      if (data.problems && data.problems.length > 0) {
+        setSelectedProblem(data.problems[0]); // Set the first problem as default
+      }
+    } catch (error) {
+      console.error("Error fetching contest problems:", error);
+    }
   };
 
   useEffect(() => {
@@ -68,7 +68,9 @@ const Code = () => {
       if (document.visibilityState === "hidden") {
         setSwitchCount((prev) => prev + 1);
         if (switchCount === 0) {
-          setModalMessage("Don't switch tabs! Your contest will be auto-submitted after 2 more tab switches.");
+          setModalMessage(
+            "Don't switch tabs! Your contest will be auto-submitted after 2 more tab switches."
+          );
           setShowModal(true);
         }
       }
@@ -88,16 +90,11 @@ const Code = () => {
 
   useEffect(() => {
     getRandomProblems();
-    
     // Disable copy/paste
-    const disableCopyPaste = (event) => {
-      event.preventDefault();
-    };
-    
+    const disableCopyPaste = (event) => event.preventDefault();
     document.addEventListener("contextmenu", disableCopyPaste);
     document.addEventListener("copy", disableCopyPaste);
     document.addEventListener("paste", disableCopyPaste);
-
     return () => {
       document.removeEventListener("contextmenu", disableCopyPaste);
       document.removeEventListener("copy", disableCopyPaste);
@@ -112,82 +109,123 @@ const Code = () => {
     } else if (selectedLang === "javascript") {
       setCode("// Write your solution here");
     } else if (selectedLang === "java") {
-      setCode("class Solution {\n    public static void main(String[] args) {\n        // Write your solution here\n    }\n}");
+      setCode(
+        "class Solution {\n    public static void main(String[] args) {\n        // Write your solution here\n    }\n}"
+      );
     } else if (selectedLang === "cpp") {
-      setCode("#include <iostream>\nusing namespace std;\n\nint main() {\n    // Write your solution here\n    return 0;\n}");
+      setCode(
+        "#include <iostream>\nusing namespace std;\n\nint main() {\n    // Write your solution here\n    return 0;\n}"
+      );
     } else {
       setCode("// Write your solution here");
     }
   }, [selectedLang]);
 
-  const runCode = async () => {
+  // Function to call backend API for running code (without DB storage)
+  const runCodeHandler = async () => {
     if (!selectedProblem) {
       setModalMessage("Please select a problem first!");
       setShowModal(true);
       return;
     }
-    
+
     setIsRunning(true);
     setOutput("Running...");
-    
-    const selectedLanguage = languages.find(lang => lang.value === selectedLang);
+
+    const selectedLanguage = languages.find(
+      (lang) => lang.value === selectedLang
+    );
+
+    // Use test cases from the selected problem (from backend), fallback to example if not available
+    const testCasesForJudge =
+      selectedProblem.testcases && selectedProblem.testcases.length > 0
+        ? selectedProblem.testcases.map((tc) => ({
+            input: tc.input,
+            expected_output: tc.output,
+          }))
+        : [
+            {
+              input: selectedProblem.example?.Input || "",
+              expected_output: selectedProblem.example?.Output || "",
+            },
+          ];
+
     const requestData = {
       language_id: selectedLanguage?.id || 71,
       source_code: code,
-      stdin: selectedProblem.example.Input || "",
-      expected_output: selectedProblem.example.Output || "",
-      cpu_time_limit: 2,
-      memory_limit: 128000,
+      testCases: testCasesForJudge,
     };
 
     try {
-      const response = await fetch("http://localhost:5000/api/submit-code", {
+      const response = await fetch("http://localhost:5000/api/run-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(requestData),
       });
 
       const result = await response.json();
-      
-      // Format test cases
-      const newTestCase = {
-        id: testCases.length + 1,
-        input: selectedProblem.example.Input,
-        expectedOutput: selectedProblem.example.Output,
-        actualOutput: result.stdout?.trim() || "No output",
-        status: result.stdout?.trim() === selectedProblem.example.Output?.trim() ? "Accepted" : "Wrong Answer",
-        runtime: result.time ? `${result.time}ms` : "N/A",
-        memory: result.memory ? `${result.memory}KB` : "N/A",
-      };
-      
-      setTestCases([...testCases, newTestCase]);
-      setOutput(result.stdout || `Error: ${result.stderr}`);
+
+      // Map the Judge0 response with your test cases
+      const newTestCases = result.map((res, idx) => ({
+        id: idx + 1,
+        input: testCasesForJudge[idx].input,
+        expectedOutput: testCasesForJudge[idx].expected_output,
+        actualOutput: res.stdout ? res.stdout.trim() : "No output",
+        runtime: res.time ? `${res.time}ms` : "N/A",
+        memory: res.memory ? `${res.memory}KB` : "N/A",
+        status:
+          res.stdout &&
+          res.stdout.trim() === testCasesForJudge[idx].expected_output.trim()
+            ? "Accepted"
+            : "Wrong Answer",
+      }));
+
+      setTestCases(newTestCases);
+      setOutput(
+        newTestCases.map((tc) => `Test Case ${tc.id}: ${tc.status}`).join("\n")
+      );
     } catch (error) {
-      setOutput(`Request failed: ${error.message || JSON.stringify(error)}`);
-      console.error("Error submitting code:", error);
+      setOutput(`Request failed: ${error.message}`);
+      console.error("Error running code:", error);
     } finally {
       setIsRunning(false);
     }
   };
 
-  const submitCode = async () => {
+  // Function to call backend API for submitting code (and storing data in DB)
+  const submitCodeHandler = async () => {
     if (!selectedProblem) {
       setModalMessage("Please select a problem first!");
       setShowModal(true);
       return;
     }
-    
+
     setIsRunning(true);
     setOutput("Submitting...");
-    
-    const selectedLanguage = languages.find(lang => lang.value === selectedLang);
+
+    const selectedLanguage = languages.find(
+      (lang) => lang.value === selectedLang
+    );
+
+    const testCasesForJudge =
+      selectedProblem.testcases && selectedProblem.testcases.length > 0
+        ? selectedProblem.testcases.map((tc) => ({
+            input: tc.input,
+            expected_output: tc.output,
+          }))
+        : [
+            {
+              input: selectedProblem.example?.Input || "",
+              expected_output: selectedProblem.example?.Output || "",
+            },
+          ];
+
     const requestData = {
       language_id: selectedLanguage?.id || 71,
       source_code: code,
-      stdin: selectedProblem.example.Input || "",
-      expected_output: selectedProblem.example.Output || "",
-      cpu_time_limit: 2,
-      memory_limit: 128000,
+      testCases: testCasesForJudge, // Array of { input, expected_output }
+      problemId: selectedProblem._id, // Pass the MongoDB question ID
+      // Optionally: contestId, userId (if you have authentication middleware)
     };
 
     try {
@@ -198,30 +236,36 @@ const Code = () => {
       });
 
       const result = await response.json();
-      
-      // Check if solution is correct
-      const isCorrect = result.stdout?.trim() === selectedProblem.example.Output?.trim();
-      
-      setModalMessage(isCorrect ? 
-        "✅ Congratulations! Your solution was accepted." : 
-        "❌ Wrong answer. Please check your solution and try again.");
+
+      const isCorrect = result.overall_status === "Accepted";
+
+      setModalMessage(
+        isCorrect
+          ? "✅ Congratulations! Your solution was accepted."
+          : "❌ Wrong answer. Please check your solution and try again."
+      );
       setShowModal(true);
-      
-      // Format test cases
-      const newTestCase = {
-        id: testCases.length + 1,
-        input: selectedProblem.example.Input,
-        expectedOutput: selectedProblem.example.Output,
-        actualOutput: result.stdout?.trim() || "No output",
-        status: isCorrect ? "Accepted" : "Wrong Answer",
-        runtime: result.time ? `${result.time}ms` : "N/A",
-        memory: result.memory ? `${result.memory}KB` : "N/A",
-      };
-      
-      setTestCases([...testCases, newTestCase]);
-      setOutput(result.stdout || `Error: ${result.stderr}`);
+
+      const newTestCases = result.test_results.map((res, idx) => ({
+        id: idx + 1,
+        input: testCasesForJudge[idx].input,
+        expectedOutput: testCasesForJudge[idx].expected_output,
+        actualOutput: res.stdout ? res.stdout.trim() : "No output",
+        runtime: res.time ? `${res.time}ms` : "N/A",
+        memory: res.memory ? `${res.memory}KB` : "N/A",
+        status:
+          res.stdout &&
+          res.stdout.trim() === testCasesForJudge[idx].expected_output.trim()
+            ? "Accepted"
+            : "Wrong Answer",
+      }));
+
+      setTestCases(newTestCases);
+      setOutput(
+        newTestCases.map((tc) => `Test Case ${tc.id}: ${tc.status}`).join("\n")
+      );
     } catch (error) {
-      setOutput(`Request failed: ${error.message || JSON.stringify(error)}`);
+      setOutput(`Request failed: ${error.message}`);
       console.error("Error submitting code:", error);
     } finally {
       setIsRunning(false);
@@ -238,67 +282,85 @@ const Code = () => {
     } else if (selectedLang === "javascript") {
       setCode("// Write your solution here");
     } else if (selectedLang === "java") {
-      setCode("class Solution {\n    public static void main(String[] args) {\n        // Write your solution here\n    }\n}");
+      setCode(
+        "class Solution {\n    public static void main(String[] args) {\n        // Write your solution here\n    }\n}"
+      );
     } else if (selectedLang === "cpp") {
-      setCode("#include <iostream>\nusing namespace std;\n\nint main() {\n    // Write your solution here\n    return 0;\n}");
+      setCode(
+        "#include <iostream>\nusing namespace std;\n\nint main() {\n    // Write your solution here\n    return 0;\n}"
+      );
     } else {
       setCode("// Write your solution here");
     }
   };
 
-  const themeClass = isDarkMode ? 
-    "bg-[#131313] text-white" : 
-    "bg-[#f9f9f9] text-gray-900";
-
-  const headerClass = isDarkMode ? 
-    "bg-[#111111] text-white" : 
-    "bg-white text-gray-900 border-b border-gray-200";
-
-  const buttonClass = isDarkMode ? 
-    "bg-[#262626] hover:bg-gray-700 text-white" : 
-    "bg-blue-500 hover:bg-blue-600 text-white";
-
-  const sidebarClass = isDarkMode ? 
-    "bg-[#262626] text-white" : 
-    "bg-gray-100 text-gray-800 border-r border-gray-200";
-
-  const editorClass = isDarkMode ? 
-    "bg-[#1e1e1e]" : 
-    "bg-white border border-gray-200";
-
-  const outputClass = isDarkMode ? 
-    "bg-[#262626] text-white" : 
-    "bg-gray-100 text-gray-800 border-t border-gray-200";
-
-  const selectClass = isDarkMode ? 
-    "bg-[#262626] text-white" : 
-    "bg-white text-gray-800 border border-gray-300";
+  const themeClass = isDarkMode
+    ? "bg-[#131313] text-white"
+    : "bg-[#f9f9f9] text-gray-900";
+  const headerClass = isDarkMode
+    ? "bg-[#111111] text-white"
+    : "bg-white text-gray-900 border-b border-gray-200";
+  const buttonClass = isDarkMode
+    ? "bg-[#262626] hover:bg-gray-700 text-white"
+    : "bg-blue-500 hover:bg-blue-600 text-white";
+  const sidebarClass = isDarkMode
+    ? "bg-[#262626] text-white"
+    : "bg-gray-100 text-gray-800 border-r border-gray-200";
+  const editorClass = isDarkMode
+    ? "bg-[#1e1e1e]"
+    : "bg-white border border-gray-200";
+  const outputClass = isDarkMode
+    ? "bg-[#262626] text-white"
+    : "bg-gray-100 text-gray-800 border-t border-gray-200";
+  const selectClass = isDarkMode
+    ? "bg-[#262626] text-white"
+    : "bg-white text-gray-800 border border-gray-300";
 
   const TestCaseItem = ({ testCase }) => (
-    <div className={`${isDarkMode ? 'bg-[#1e1e1e]' : 'bg-white border'} p-3 mb-2 rounded-md`}>
+    <div
+      className={`${
+        isDarkMode ? "bg-[#1e1e1e]" : "bg-white border"
+      } p-3 mb-2 rounded-md`}
+    >
       <div className="flex justify-between items-center mb-2">
         <div className="font-bold">Test Case #{testCase.id}</div>
-        <div className={`px-2 py-1 rounded text-white ${testCase.status === "Accepted" ? "bg-green-600" : "bg-red-600"}`}>
+        <div
+          className={`px-2 py-1 rounded text-white ${
+            testCase.status === "Accepted" ? "bg-green-600" : "bg-red-600"
+          }`}
+        >
           {testCase.status}
         </div>
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div>
           <div className="text-sm opacity-70">Input:</div>
-          <div className={`${isDarkMode ? 'bg-[#2d2d2d]' : 'bg-gray-100'} p-2 rounded mt-1 text-sm`}>
+          <div
+            className={`${
+              isDarkMode ? "bg-[#2d2d2d]" : "bg-gray-100"
+            } p-2 rounded mt-1 text-sm`}
+          >
             {testCase.input}
           </div>
         </div>
         <div>
           <div className="text-sm opacity-70">Expected Output:</div>
-          <div className={`${isDarkMode ? 'bg-[#2d2d2d]' : 'bg-gray-100'} p-2 rounded mt-1 text-sm`}>
+          <div
+            className={`${
+              isDarkMode ? "bg-[#2d2d2d]" : "bg-gray-100"
+            } p-2 rounded mt-1 text-sm`}
+          >
             {testCase.expectedOutput}
           </div>
         </div>
       </div>
       <div className="mt-2">
         <div className="text-sm opacity-70">Your Output:</div>
-        <div className={`${isDarkMode ? 'bg-[#2d2d2d]' : 'bg-gray-100'} p-2 rounded mt-1 text-sm`}>
+        <div
+          className={`${
+            isDarkMode ? "bg-[#2d2d2d]" : "bg-gray-100"
+          } p-2 rounded mt-1 text-sm`}
+        >
           {testCase.actualOutput}
         </div>
       </div>
@@ -312,30 +374,41 @@ const Code = () => {
   return (
     <div className={`min-h-screen py-3 px-3 ${themeClass}`}>
       {/* Header */}
-      <div className={`flex items-center justify-between px-4 py-3 rounded-t-md ${headerClass}`}>
+      <div
+        className={`flex items-center justify-between px-4 py-3 rounded-t-md ${headerClass}`}
+      >
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate("/")}
-            className={`px-3 py-2 rounded-md ${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'}`}
+            className={`px-3 py-2 rounded-md ${
+              isDarkMode ? "hover:bg-gray-800" : "hover:bg-gray-100"
+            }`}
           >
             <ArrowLeft size={20} />
           </button>
-          <h1 className="text-2xl font-bold cursor-pointer" onClick={() => setProblemsVisible(!problemsVisible)}>
+          <h1
+            className="text-2xl font-bold cursor-pointer"
+            onClick={() => setProblemsVisible(!problemsVisible)}
+          >
             Problems
           </h1>
         </div>
         <div className="flex gap-2">
           <button
-            onClick={runCode}
+            onClick={runCodeHandler}
             disabled={isRunning}
-            className={`${buttonClass} px-6 py-2 rounded-md flex items-center gap-2 ${isRunning ? 'opacity-50 cursor-not-allowed' : ''}`}
+            className={`${buttonClass} px-6 py-2 rounded-md flex items-center gap-2 ${
+              isRunning ? "opacity-50 cursor-not-allowed" : ""
+            }`}
           >
             <Play size={18} /> Run
           </button>
           <button
-            onClick={submitCode}
+            onClick={submitCodeHandler}
             disabled={isRunning}
-            className={`${buttonClass} px-6 py-2 rounded-md flex items-center gap-2 ${isRunning ? 'opacity-50 cursor-not-allowed' : ''}`}
+            className={`${buttonClass} px-6 py-2 rounded-md flex items-center gap-2 ${
+              isRunning ? "opacity-50 cursor-not-allowed" : ""
+            }`}
           >
             <Upload size={18} /> Submit
           </button>
@@ -357,7 +430,7 @@ const Code = () => {
         </div>
       </div>
 
-      <div >
+      <div>
         <VideoFeed onStreamReady={setVideoElement} />
         <DetectMultipleFaces videoElement={videoElement} />
         <DetectMobile videoElement={videoElement} />
@@ -374,19 +447,35 @@ const Code = () => {
         {/* Problem Description */}
         {problemsVisible ? (
           <div className={`w-full h-full ${sidebarClass} px-5 overflow-auto`}>
-            <h2 className="text-2xl font-semibold mb-4 py-5">Contest Problems</h2>
+            <h2 className="text-2xl font-semibold mb-4 py-5">
+              Contest Problems
+            </h2>
             {randomProblems.map((prob, index) => (
-              <div 
+              <div
                 key={prob.id}
-                className={`cursor-pointer py-3 px-4 mb-2 rounded-md ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-200'} ${selectedProblem?.id === prob.id ? (isDarkMode ? 'bg-gray-700' : 'bg-gray-200') : ''}`}
+                className={`cursor-pointer py-3 px-4 mb-2 rounded-md ${
+                  isDarkMode ? "hover:bg-gray-700" : "hover:bg-gray-200"
+                } ${
+                  selectedProblem?.id === prob.id
+                    ? isDarkMode
+                      ? "bg-gray-700"
+                      : "bg-gray-200"
+                    : ""
+                }`}
                 onClick={() => {
                   setSelectedProblem(prob);
                   setProblemsVisible(false);
                 }}
               >
                 <div className="flex justify-between items-center">
-                  <div className="font-medium text-lg">{index + 1}. {prob.title}</div>
-                  <div className={`px-2 py-1 rounded-full text-xs text-white ${difficultyColors[prob.difficulty]}`}>
+                  <div className="font-medium text-lg">
+                    {index + 1}.{prob.title}
+                  </div>
+                  <div
+                    className={`px-2 py-1 rounded-full text-xs text-white ${
+                      difficultyColors[prob.difficulty]
+                    }`}
+                  >
                     {prob.difficulty}
                   </div>
                 </div>
@@ -396,45 +485,78 @@ const Code = () => {
         ) : (
           <div
             className={`${sidebarClass} p-4 overflow-auto`}
-            style={{
-              userSelect: "none",
-              WebkitUserSelect: "none",
-            }}
+            style={{ userSelect: "none", WebkitUserSelect: "none" }}
           >
             {selectedProblem && (
               <div className="mt-4">
                 <div className="mb-4">
-                  <h1 className="text-3xl font-bold mb-2">{selectedProblem.title}</h1>
-                  <div className={`inline-block px-3 py-1 rounded-md text-white ${difficultyColors[selectedProblem.difficulty]} mt-1`}>
+                  <h1 className="text-3xl font-bold mb-2">
+                    {selectedProblem.quesNo} . {selectedProblem.title}
+                  </h1>
+                  <div
+                    className={`inline-block px-3 py-1 rounded-md text-white ${
+                      difficultyColors[selectedProblem.difficulty]
+                    } mt-1`}
+                  >
                     {selectedProblem.difficulty}
                   </div>
                 </div>
-                
-                <div className={`${isDarkMode ? 'bg-[#1e1e1e]' : 'bg-white'} p-4 rounded-md mb-4`}>
-                  <h3 className="text-xl font-semibold mb-2">Problem Description</h3>
-                  <p className="whitespace-pre-line">{selectedProblem.description}</p>
+
+                <div
+                  className={`${
+                    isDarkMode ? "bg-[#1e1e1e]" : "bg-white"
+                  } p-4 rounded-md mb-4`}
+                >
+                  <h3 className="text-xl font-semibold mb-5">
+                    Problem Description
+                  </h3>
+                  <p className="whitespace-pre-line">
+                    {selectedProblem.description}
+                  </p>
                 </div>
-                
-                <div className={`${isDarkMode ? 'bg-[#1e1e1e]' : 'bg-white'} p-4 rounded-md mb-4`}>
-                  <h3 className="text-xl font-semibold mb-2">Example</h3>
-                  <div className="mb-2">
-                    <div className="font-bold">Input:</div>
-                    <div className={`${isDarkMode ? 'bg-[#2d2d2d]' : 'bg-gray-100'} p-2 rounded mt-1`}>
-                      {selectedProblem.example.Input}
-                    </div>
-                  </div>
-                  <div className="mb-2">
-                    <div className="font-bold">Output:</div>
-                    <div className={`${isDarkMode ? 'bg-[#2d2d2d]' : 'bg-gray-100'} p-2 rounded mt-1`}>
-                      {selectedProblem.example.Output}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="font-bold">Explanation:</div>
-                    <div className="mt-1">{selectedProblem.example.Explanation}</div>
-                  </div>
+                <div
+                  className={`${
+                    isDarkMode ? "bg-[#1e1e1e]" : "bg-white"
+                  } p-4 rounded-md mb-4`}
+                >
+                  <h3 className="text-xl font-semibold mb-2">Examples</h3>
+                  {selectedProblem.testcases &&
+                  selectedProblem.testcases.length > 0 ? (
+                    selectedProblem.testcases
+                      .slice(0, 2)
+                      .map((testcase, index) => (
+                        <div key={index} className="mb-4">
+                          <div className="mb-2">
+                            <div className="font-bold">Input:</div>
+                            <div
+                              className={`${
+                                isDarkMode ? "bg-[#2d2d2d]" : "bg-gray-100"
+                              } p-2 rounded mt-1 text-sm`}
+                            >
+                              {testcase.input}
+                            </div>
+                          </div>
+                          <div className="mb-2">
+                            <div className="font-bold">Output:</div>
+                            <div
+                              className={`${
+                                isDarkMode ? "bg-[#2d2d2d]" : "bg-gray-100"
+                              } p-2 rounded mt-1 text-sm`}
+                            >
+                              {testcase.output}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="font-bold">Explanation:</div>
+                            <div className="mt-1">{testcase.explanation}</div>
+                          </div>
+                        </div>
+                      ))
+                  ) : (
+                    <div>No examples available</div>
+                  )}
                 </div>
-                
+
                 <div className="flex justify-between">
                   <button
                     onClick={() => setProblemsVisible(true)}
@@ -497,15 +619,18 @@ const Code = () => {
             <div className="sticky top-0 z-10 p-4 pb-2 flex justify-between items-center border-b border-gray-700">
               <h2 className="text-lg font-semibold">Test Cases</h2>
               {testCases.length > 0 && (
-                <button 
+                <button
                   onClick={() => setTestCases([])}
-                  className={`text-sm ${isDarkMode ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-black'}`}
+                  className={`text-sm ${
+                    isDarkMode
+                      ? "text-gray-400 hover:text-white"
+                      : "text-gray-600 hover:text-black"
+                  }`}
                 >
                   Clear All
                 </button>
               )}
             </div>
-            
             <div className="p-4 pt-2">
               {testCases.length > 0 ? (
                 <div className="space-y-4">
@@ -514,7 +639,11 @@ const Code = () => {
                   ))}
                 </div>
               ) : (
-                <div className={`${isDarkMode ? 'bg-[#1e1e1e]' : 'bg-white'} p-4 rounded-md text-center`}>
+                <div
+                  className={`${
+                    isDarkMode ? "bg-[#1e1e1e]" : "bg-white"
+                  } p-4 rounded-md text-center`}
+                >
                   {isRunning ? (
                     <div>Running your code...</div>
                   ) : (
@@ -530,10 +659,17 @@ const Code = () => {
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className={`${isDarkMode ? 'bg-[#1e1e1e] text-white' : 'bg-white text-gray-800'} p-6 rounded-lg shadow-lg max-w-md w-full`}>
+          <div
+            className={`${
+              isDarkMode ? "bg-[#1e1e1e] text-white" : "bg-white text-gray-800"
+            } p-6 rounded-lg shadow-lg max-w-md w-full`}
+          >
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-bold">CodeJudge</h3>
-              <button onClick={() => setShowModal(false)} className="text-gray-500 hover:text-gray-700">
+              <button
+                onClick={() => setShowModal(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
                 <X size={20} />
               </button>
             </div>
