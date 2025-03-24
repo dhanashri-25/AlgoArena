@@ -5,12 +5,12 @@ import Practice from "./Pages/Practice";
 import Compete from "./Pages/Compete";
 import Navbar from "./components/Navbar";
 import Profile from "./Pages/Profile";
-import Code from "./components/Code";
 import ContestRulesPage from "./components/ContestRulesPage";
 import Result from "./Pages/Result";
 import ProtectedRoute from "./components/ProtectedRoute";
 import LoginPage from "./auth/LoginPage";
 import SignupPage from "./auth/SignupPage";
+import Code from "./components/CodeEditor/Code";
 const App = () => {
   const location = useLocation(); //for getting current route
   return (
