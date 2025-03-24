@@ -35,15 +35,48 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api", contestRoutes);
-// Route to run code using Judge0 integration
+
+const JUDGE0_API = process.env.JUDGE0_API || "http://localhost:2358";
+// Judge0 integration
 app.post("/api/run-code", async (req, res) => {
   try {
-    const { code, language, testCases } = req.body;
-    if (!code || !language || !testCases) {
+    const { language, source_code, testCases } = req.body;
+    if (!source_code || !language || !testCases || !Array.isArray(testCases)) {
       return res.status(400).json({ error: "Missing required fields" });
     }
-    const result = await runCode(code, language, testCases);
-    res.json(result);
+
+    const results = [];
+    // Process each test case individually
+    for (const tc of testCases) {
+      const submission = await axios.post(
+        `${JUDGE0_API}/submissions?base64_encoded=false&wait=false`,
+        {
+          language_id: language,
+          source_code,
+          stdin: tc.input || "",
+          expected_output: tc.expected_output || "",
+          cpu_time_limit: 2,
+          memory_limit: 128000,
+        },
+        {
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+
+      const token = submission.data.token;
+      let result;
+      while (true) {
+        result = await axios.get(
+          `${JUDGE0_API}/submissions/${token}?base64_encoded=false`,
+          { headers: { "Content-Type": "application/json" } }
+        );
+        if (result.data.status.id >= 3) break; // Execution complete
+        await new Promise((r) => setTimeout(r, 1000)); // Wait before retry
+      }
+      results.push(result.data);
+    }
+
+    res.json(results);
   } catch (error) {
     console.error("Error in /api/run-code:", error);
     res.status(500).json({ error: error.message });

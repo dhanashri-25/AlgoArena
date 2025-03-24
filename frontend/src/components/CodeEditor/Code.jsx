@@ -111,18 +111,24 @@ const Code = () => {
     setIsRunning(true);
     setOutput("Running...");
     const selectedLanguage = languages.find(lang => lang.value === selectedLang);
-    const testCasesForJudge = selectedProblem.testcases && selectedProblem.testcases.length > 0 ? selectedProblem.testcases.map(tc => ({
-      input: tc.input,
-      expected_output: tc.output,
-    })) : [{
-      input: selectedProblem.example?.Input || "",
-      expected_output: selectedProblem.example?.Output || "",
-    }];
+    
+    const testCasesForJudge =
+      selectedProblem.testcases && selectedProblem.testcases.length > 0
+        ? selectedProblem.testcases.map(tc => ({
+            input: tc.input,
+            expected_output: tc.output,
+          }))
+        : [{
+            input: selectedProblem.example?.Input || "",
+            expected_output: selectedProblem.example?.Output || "",
+          }];
+    
     const requestData = {
-      language_id: selectedLanguage?.id || 71,
+      language: selectedLanguage?.id || 71,
       source_code: code,
       testCases: testCasesForJudge,
     };
+  
     try {
       const response = await fetch("http://localhost:5000/api/run-code", {
         method: "POST",
@@ -131,7 +137,8 @@ const Code = () => {
       });
       if (!response.ok) throw new Error("Network response was not ok");
       const result = await response.json();
-      if (!Array.isArray(result)) throw new Error("Unexpected response format from Judge0");
+      if (!Array.isArray(result))
+        throw new Error("Unexpected response format from Judge0");
       const newTestCases = result.map((res, idx) => ({
         id: idx + 1,
         input: testCasesForJudge[idx]?.input || "",
@@ -139,7 +146,11 @@ const Code = () => {
         actualOutput: res.stdout ? res.stdout.trim() : "No output",
         runtime: res.time ? `${res.time}ms` : "N/A",
         memory: res.memory ? `${res.memory}KB` : "N/A",
-        status: res.stdout && res.stdout.trim() === (testCasesForJudge[idx]?.expected_output || "").trim() ? "Accepted" : "Wrong Answer",
+        status:
+          res.stdout &&
+          res.stdout.trim() === (testCasesForJudge[idx]?.expected_output || "").trim()
+            ? "Accepted"
+            : "Wrong Answer",
       }));
       setTestCases(newTestCases);
       setOutput(newTestCases.map(tc => `Test Case ${tc.id}: ${tc.status}`).join("\n"));
@@ -150,6 +161,7 @@ const Code = () => {
       setIsRunning(false);
     }
   };
+  
 
   const submitCodeHandler = async () => {
     if (!selectedProblem) {
