@@ -24,17 +24,30 @@ const ProblemDetails = ({ selectedProblem, isDarkMode, setProblemsVisible, butto
             selectedProblem.testcases.slice(0, 2).map((tc, index) => (
               <div key={index} className="mb-4">
                 <div className="mb-2">
-                  <div className="font-bold">Input:</div>
-                  <div className={`${isDarkMode ? "bg-[#2d2d2d]" : "bg-gray-100"} p-2 rounded mt-1 text-sm`}>{tc.input}</div>
+                <div className="font-bold">Input:</div>
+                <div className={`${isDarkMode ? "bg-[#2d2d2d]" : "bg-gray-100"} p-2 rounded mt-1 text-xl`}>
+                <code>
+                  {tc.input.map((val, index) => 
+                    index % 2 === 0 
+                      ? <span key={index} className="text-blue-500">{val}: </span>  
+                      : <span key={index}>  
+                          <span className="text-green-500">{val}</span> 
+                          {index !== tc.input.length - 1 && <span> , </span>} 
+                        </span>
+                  )}
+                </code>
+                
+                </div>
+
                 </div>
                 <div className="mb-2">
                   <div className="font-bold">Output:</div>
-                  <div className={`${isDarkMode ? "bg-[#2d2d2d]" : "bg-gray-100"} p-2 rounded mt-1 text-sm`}>{tc.output}</div>
+                  <div className={`${isDarkMode ? "bg-[#2d2d2d]" : "bg-gray-100"} p-2 rounded mt-1 text-xl`}><code>{tc.output}</code></div>
                 </div>
-                <div>
+                {/* <div>
                   <div className="font-bold">Explanation:</div>
                   <div className="mt-1">{tc.explanation}</div>
-                </div>
+                </div> */}
               </div>
             ))
           ) : (

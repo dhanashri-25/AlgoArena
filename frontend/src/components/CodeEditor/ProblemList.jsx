@@ -1,7 +1,7 @@
 import React from "react";
 import { difficultyColors } from "../../utils/constants";
 
-const ProblemList = ({ randomProblems, selectedProblem, setSelectedProblem, setProblemsVisible, isDarkMode }) => {
+const ProblemList = ({ randomProblems, selectedProblem, setSelectedProblem, setProblemsVisible, isDarkMode , setCode  ,selectedLang }) => {
   return (
     <div className="w-full h-full bg-transparent px-5 overflow-auto" style={{ userSelect: "none", WebkitUserSelect: "none" }}>
       <h2 className="text-2xl font-semibold mb-4 py-5">Contest Problems</h2>
@@ -11,6 +11,7 @@ const ProblemList = ({ randomProblems, selectedProblem, setSelectedProblem, setP
           className={`cursor-pointer py-3 px-4 mb-2 rounded-md ${isDarkMode ? "hover:bg-gray-700" : "hover:bg-gray-200"} ${selectedProblem?.id === prob.id ? (isDarkMode ? "bg-gray-700" : "bg-gray-200") : ""}`}
           onClick={() => {
             setSelectedProblem(prob);
+            setCode(prob.templateCode[selectedLang])
             setProblemsVisible(false);
           }}
         >

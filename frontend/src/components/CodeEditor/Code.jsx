@@ -11,16 +11,15 @@ import DetectMultipleFaces from "../DetectMultipleFaces.jsx";
 import DetectMobile from "../DetectMobile.jsx";
 
 const languages = [
-  { label: "C", value: "c", id: 50 },
-  { label: "C++", value: "cpp", id: 54 },
-  { label: "Java", value: "java", id: 62 },
-  { label: "JavaScript", value: "javascript", id: 63 },
-  { label: "Python 3", value: "python", id: 71 },
+  { label: "C++", value: "Cpp", id: 54 },
+  { label: "Java", value: "Java", id: 62 },
+  { label: "Python 3", value: "Python", id: 71 },
 ];
 
 const Code = () => {
   const navigate = useNavigate();
-  const [selectedLang, setSelectedLang] = useState(languages[4].value);
+  const [selectedLang, setSelectedLang] = useState("Java");
+  const [isLoading , setIsLoading] = useState(true);
   const [code, setCode] = useState("# Write your solution here");
   const [output, setOutput] = useState("");
   const [randomProblems, setRandomProblems] = useState([]);
@@ -32,6 +31,7 @@ const Code = () => {
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [isRunning, setIsRunning] = useState(false);
   const [testCases, setTestCases] = useState([]);
+  const [correct , setCorrect] = useState(false)
   const [videoElement, setVideoElement] = useState(null);
 
   const themeClass = isDarkMode ? "bg-[#131313] text-white" : "bg-[#f9f9f9] text-gray-900";
@@ -49,6 +49,8 @@ const Code = () => {
       setRandomProblems(data.problems);
       if (data.problems && data.problems.length > 0) {
         setSelectedProblem(data.problems[0]);
+        setCode(data.problems[0].templateCode[selectedLang])
+        setIsLoading(false)
       }
     } catch (error) {
       console.error("Error fetching contest problems:", error);
@@ -69,11 +71,11 @@ const Code = () => {
     return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
   }, [switchCount]);
 
-  useEffect(() => {
-    if (switchCount > 2) {
-      navigate("/submit");
-    }
-  }, [switchCount, navigate]);
+  // useEffect(() => {
+  //   if (switchCount > 2) {
+  //     navigate("/submit");
+  //   }
+  // }, [switchCount, navigate]);
 
   useEffect(() => {
     getRandomProblems();
@@ -88,21 +90,9 @@ const Code = () => {
     };
   }, []);
 
-  useEffect(() => {
-    if (selectedLang === "python") {
-      setCode("# Write your solution here");
-    } else if (selectedLang === "javascript") {
-      setCode("// Write your solution here");
-    } else if (selectedLang === "java") {
-      setCode("class Solution {\n    public static void main(String[] args) {\n        // Write your solution here\n    }\n}");
-    } else if (selectedLang === "cpp") {
-      setCode("#include <iostream>\nusing namespace std;\n\nint main() {\n    // Write your solution here\n    return 0;\n}");
-    } else {
-      setCode("// Write your solution here");
-    }
-  }, [selectedLang]);
 
   const runCodeHandler = async () => {
+    setCorrect(false)
     if (!selectedProblem) {
       setModalMessage("Please select a problem first!");
       setShowModal(true);
@@ -113,20 +103,16 @@ const Code = () => {
     const selectedLanguage = languages.find(lang => lang.value === selectedLang);
     
     const testCasesForJudge =
-      selectedProblem.testcases && selectedProblem.testcases.length > 0
-        ? selectedProblem.testcases.map(tc => ({
-            input: tc.input,
-            expected_output: tc.output,
-          }))
-        : [{
-            input: selectedProblem.example?.Input || "",
-            expected_output: selectedProblem.example?.Output || "",
-          }];
+      selectedProblem.testcases ;
+    
+      console.log("Test cases before "  , testCasesForJudge)
     
     const requestData = {
-      language: selectedLanguage?.id || 71,
-      source_code: code,
-      testCases: testCasesForJudge,
+        language: selectedLanguage,
+        language_id: selectedLanguage.id ,  
+        code,
+        testCases: selectedProblem.testcases,
+        wrapCode: selectedProblem.wrapperCode[selectedLang]
     };
   
     try {
@@ -135,25 +121,48 @@ const Code = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(requestData),
       });
-      if (!response.ok) throw new Error("Network response was not ok");
+      
       const result = await response.json();
-      if (!Array.isArray(result))
-        throw new Error("Unexpected response format from Judge0");
-      const newTestCases = result.map((res, idx) => ({
-        id: idx + 1,
-        input: testCasesForJudge[idx]?.input || "",
-        expectedOutput: testCasesForJudge[idx]?.expected_output || "",
-        actualOutput: res.stdout ? res.stdout.trim() : "No output",
-        runtime: res.time ? `${res.time}ms` : "N/A",
-        memory: res.memory ? `${res.memory}KB` : "N/A",
-        status:
-          res.stdout &&
-          res.stdout.trim() === (testCasesForJudge[idx]?.expected_output || "").trim()
-            ? "Accepted"
-            : "Wrong Answer",
-      }));
+      console.log(result)
+
+       
+      if (!Array.isArray(result.results))
+      throw new Error("Unexpected response format from Judge0");
+      const resultArray = Array.isArray(result.results) ? result.results : [];
+
+      const newTestCases = resultArray.map((res, idx) => {
+        const cleanOutput = res.stdout?.trim().replace(/\r\n/g, "\n");
+        const expectedOutput = (testCasesForJudge[idx]?.output || "").trim().replace(/\r\n/g, "\n");
+        console.log("case : " , testCasesForJudge[idx])
+        const input = testCasesForJudge[idx]?.input.map((val, index) => 
+          index % 2 === 0 
+            ? <span key={index} className="text-blue-500">{val}: </span>  
+            : <span key={index}>  
+                <span className="text-green-500">{val}</span> 
+                {index !== testCasesForJudge[idx].input.length - 1 && <span> , </span>} 
+              </span>
+        )
+      
+        console.log(`Test Case ${idx + 1}:`);
+        console.log("Actual Output:", `"${cleanOutput}"`);
+        console.log("Expected Output:", `"${expectedOutput}"`);
+        console.log("given input:", {input});
+
+      
+        return {
+          id: idx + 1,
+          input: input ,
+          expectedOutput,
+          actualOutput: cleanOutput || "No output",
+          runtime: res.time ? `${res.time}ms` : "N/A",
+          memory: res.memory ? `${res.memory}KB` : "N/A",
+          status: cleanOutput === expectedOutput ? "Accepted" : "Wrong Answer",
+        };
+      });
+      
       setTestCases(newTestCases);
       setOutput(newTestCases.map(tc => `Test Case ${tc.id}: ${tc.status}`).join("\n"));
+      
     } catch (error) {
       setOutput(`Request failed: ${error.message}`);
       console.error("Error running code:", error);
@@ -164,26 +173,27 @@ const Code = () => {
   
 
   const submitCodeHandler = async () => {
+    setCorrect(false);
     if (!selectedProblem) {
       setModalMessage("Please select a problem first!");
       setShowModal(true);
       return;
     }
     setIsRunning(true);
-    setOutput("Submitting...");
+    setOutput("Submiting...");
     const selectedLanguage = languages.find(lang => lang.value === selectedLang);
-    const testCasesForJudge = selectedProblem.testcases && selectedProblem.testcases.length > 0 ? selectedProblem.testcases.map(tc => ({
-      input: tc.input,
-      expected_output: tc.output,
-    })) : [{
-      input: selectedProblem.example?.Input || "",
-      expected_output: selectedProblem.example?.Output || "",
-    }];
+    
+    const testCasesForJudge =
+      selectedProblem.testcases ;
+    
+      console.log("Test cases before "  , testCasesForJudge)
+    
     const requestData = {
-      language_id: selectedLanguage?.id || 71,
-      source_code: code,
-      testCases: testCasesForJudge,
-      problemId: selectedProblem._id,
+        language: selectedLanguage,
+        language_id: selectedLanguage.id ,  
+        code,
+        testCases: selectedProblem.testcases,
+        wrapCode: selectedProblem.wrapperCode[selectedLang]
     };
     try {
       const response = await fetch("http://localhost:5000/api/submit-code", {
@@ -191,47 +201,75 @@ const Code = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(requestData),
       });
-      if (!response.ok) throw new Error("Network response was not ok");
+      
       const result = await response.json();
-      const isCorrect = result.overall_status === "Accepted";
-      setModalMessage(isCorrect ? "✅ Congratulations! Your solution was accepted." : "❌ Wrong answer. Please check your solution and try again.");
-      setShowModal(true);
-      const newTestCases = result.test_results.map((res, idx) => ({
-        id: idx + 1,
-        input: testCasesForJudge[idx]?.input || "",
-        expectedOutput: testCasesForJudge[idx]?.expected_output || "",
-        actualOutput: res.stdout ? res.stdout.trim() : "No output",
-        runtime: res.time ? `${res.time}ms` : "N/A",
-        memory: res.memory ? `${res.memory}KB` : "N/A",
-        status: res.stdout && res.stdout.trim() === (testCasesForJudge[idx]?.expected_output || "").trim() ? "Accepted" : "Wrong Answer",
-      }));
+
+      if(result.success){
+        setModalMessage( "✅ Congratulations! Your solution was accepted.");
+        setShowModal(true);
+        setCorrect(true)
+      } else {
+        setModalMessage( "❌ Wrong answer. Please check your solution and try again.");
+        setShowModal(true);
+      }
+    
+    const idx = result.index;
+    
+    
+    const resultArray = Array.isArray(result.results) ? result.results : [];
+
+      const newTestCases = resultArray.map((res) => {
+        const cleanOutput = res.stdout?.trim().replace(/\r\n/g, "\n");
+        const expectedOutput = (testCasesForJudge[idx]?.output || "").trim().replace(/\r\n/g, "\n");
+        console.log("case : " , testCasesForJudge[idx])
+        const input = testCasesForJudge[idx]?.input.map((val, index) => 
+          index % 2 === 0 
+            ? <span key={index} className="text-blue-500">{val}: </span>  
+            : <span key={index}>  
+                <span className="text-green-500">{val}</span> 
+                {index !== testCasesForJudge[idx].input.length - 1 && <span> , </span>} 
+              </span>
+        )
+      
+        console.log(`Test Case ${idx + 1}:`);
+        console.log("Actual Output:", `"${cleanOutput}"`);
+        console.log("Expected Output:", `"${expectedOutput}"`);
+        console.log("given input:", {input});
+
+      
+        return {
+          id: idx + 1,
+          input: input ,
+          expectedOutput,
+          actualOutput: cleanOutput || "No output",
+          runtime: res.time ? `${res.time}ms` : "N/A",
+          memory: res.memory ? `${res.memory}KB` : "N/A",
+          status: cleanOutput === expectedOutput ? "Accepted" : "Wrong Answer",
+        };
+      });
+      
       setTestCases(newTestCases);
+      console.log("after" , newTestCases)
       setOutput(newTestCases.map(tc => `Test Case ${tc.id}: ${tc.status}`).join("\n"));
+      
     } catch (error) {
       setOutput(`Request failed: ${error.message}`);
-      console.error("Error submitting code:", error);
+      console.error("Error running code:", error);
     } finally {
       setIsRunning(false);
     }
   };
 
   const resetCode = () => {
-    if (selectedLang === "python") {
-      setCode("# Write your solution here");
-    } else if (selectedLang === "javascript") {
-      setCode("// Write your solution here");
-    } else if (selectedLang === "java") {
-      setCode("class Solution {\n    public static void main(String[] args) {\n        // Write your solution here\n    }\n}");
-    } else if (selectedLang === "cpp") {
-      setCode("#include <iostream>\nusing namespace std;\n\nint main() {\n    // Write your solution here\n    return 0;\n}");
-    } else {
-      setCode("// Write your solution here");
-    }
+   setCode(selectedProblem.templateCode.selectedLang)
   };
 
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode);
   };
+
+
+  if(isLoading) return <p>Loading Ho Rhi Hai</p>
 
   return (
     <div className={`min-h-screen py-3 px-3 ${themeClass}`}>
@@ -247,15 +285,17 @@ const Code = () => {
         buttonClass={buttonClass}
         headerClass={headerClass}
       />
-      <div>
-        <VideoFeed onStreamReady={setVideoElement} />
+      {/* <div>
+        <VideoFeed onStreamReady={setVideoElement} /> 
         <DetectMultipleFaces videoElement={videoElement} />
         <DetectMobile videoElement={videoElement} />
-      </div>
+      </div> */}
       <Split className="flex h-[calc(100vh-70px)]" sizes={[40, 60]} minSize={300} gutterSize={8} gutterAlign="center" snapOffset={30}>
         {problemsVisible ? (
           <ProblemList
             randomProblems={randomProblems}
+            setCode={setCode}
+            selectedLang={selectedLang}
             selectedProblem={selectedProblem}
             setSelectedProblem={setSelectedProblem}
             setProblemsVisible={setProblemsVisible}
@@ -273,6 +313,7 @@ const Code = () => {
         <Split className="flex flex-col w-full h-full" sizes={[70, 30]} minSize={100} gutterSize={8} direction="vertical" gutterAlign="center" snapOffset={30}>
           <EditorSection
             selectedLang={selectedLang}
+            setSelectedLang={setSelectedLang}
             code={code}
             setCode={setCode}
             isDarkMode={isDarkMode}
@@ -283,7 +324,10 @@ const Code = () => {
           />
           <OutputSection
             isDarkMode={isDarkMode}
+            selectedProblem={selectedProblem}
+            correct={correct}
             outputClass={outputClass}
+            output={output}
             testCases={testCases}
             isRunning={isRunning}
             setTestCases={setTestCases}

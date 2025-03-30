@@ -1,14 +1,16 @@
 import React from "react";
 import Editor from "@monaco-editor/react";
 
-const EditorSection = ({ selectedLang, code, setCode, isDarkMode, selectClass, editorClass, selectedProblem, languages }) => {
+const EditorSection = ({ selectedLang, code, setCode, isDarkMode, selectClass, editorClass, selectedProblem, languages , setSelectedLang }) => {
   return (
     <div className={`flex flex-col ${editorClass} h-full`}>
       <div className="w-full p-2 flex items-center justify-between">
         <select
           className={`${selectClass} px-4 py-2 rounded-md w-48`}
           value={selectedLang}
-          onChange={(e) => setCode("")}
+          onChange={(e) => {
+            setSelectedLang(e.target.value) 
+            setCode(selectedProblem.templateCode[e.target.value])}}
         >
           {languages.map((lang) => (
             <option key={lang.value} value={lang.value}>
@@ -16,13 +18,14 @@ const EditorSection = ({ selectedLang, code, setCode, isDarkMode, selectClass, e
             </option>
           ))}
         </select>
+        
         <div className="text-sm opacity-70">
           {selectedProblem && `Problem: ${selectedProblem.title}`}
         </div>
       </div>
       <Editor
         height="100%"
-        language={selectedLang}
+        language={selectedLang.toLowerCase()}
         value={code}
         onChange={(value) => setCode(value)}
         theme={isDarkMode ? "vs-dark" : "light"}

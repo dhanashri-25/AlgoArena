@@ -10,19 +10,19 @@ router.get("/current-contest", async (req, res) => {
       path: "questions",
       populate: { path: "testcases" },
     });
+    
     if (!contest) {
-      // If no contest is scheduled, fallback to random questions with testcases populated
+      // If no contest is scheduled, fallback to 4 random questions with testcases populated
       const questions = await Question.aggregate([{ $sample: { size: 4 } }]);
-      // You might need to populate testcases for these random questions as well.
-      // For simplicity, you can query for them individually:
+      
+      // Populate testcases for each question individually
       for (let i = 0; i < questions.length; i++) {
-        const populatedQuestion = await Question.findById(
-          questions[i]._id
-        ).populate("testcases");
+        const populatedQuestion = await Question.findById(questions[i]._id).populate("testcases");
         questions[i] = populatedQuestion;
       }
       return res.json({ problems: questions });
     }
+    
     res.json({ problems: contest.questions });
   } catch (error) {
     res.status(500).json({ error: error.message });

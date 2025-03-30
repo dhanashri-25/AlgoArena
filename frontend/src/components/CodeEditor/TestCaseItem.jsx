@@ -13,13 +13,22 @@ const TestCaseItem = ({ testCase, isDarkMode }) => {
         <div>
           <div className="text-sm opacity-70">Input:</div>
           <div className={`${isDarkMode ? "bg-[#2d2d2d]" : "bg-gray-100"} p-2 rounded mt-1 text-sm`}>
-            {testCase.input}
+          <code>
+                  {testCase.input.map((val, index) => 
+                    index % 2 === 0 
+                      ? <span key={index} className="text-blue-500">{val}: </span>  
+                      : <span key={index}>  
+                          <span className="text-green-500">{val}</span> 
+                          {index !== testCase.input.length - 1 && <span> , </span>} 
+                        </span>
+                  )}
+                </code>
           </div>
         </div>
         <div>
           <div className="text-sm opacity-70">Expected Output:</div>
           <div className={`${isDarkMode ? "bg-[#2d2d2d]" : "bg-gray-100"} p-2 rounded mt-1 text-sm`}>
-            {testCase.expectedOutput}
+          <code>{testCase.expectedOutput}</code>
           </div>
         </div>
       </div>
