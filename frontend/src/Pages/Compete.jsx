@@ -74,7 +74,7 @@ const CompetePage = () => {
               <Link
                 className="p-4 border rounded-md hover:bg-[#6C7993] text-white text-lg bg-black mt-3 md:mt-0 text-center"
                 to="/rules"
-                state={{contest}}
+                state={{contest: contest}}
               >
                 Register now
               </Link>

@@ -10,13 +10,11 @@ const ContestRulesPage = () => {
   const navigate = useNavigate();
   const { data: currentUser, isLoggedIn } = useAuthContext();
 
-  // Debug logs to verify data is coming correctly
   useEffect(() => {
-    console.log("Contest details:", contest);
     console.log("Current user:", currentUser);
   }, [contest, currentUser]);
+  console.log("Contest details:", contest);
 
-  // Static details for overview, rules, and scoring remain the same
   const DsaContestDetails = [
     {
       title: "Contest Overview",
@@ -131,8 +129,7 @@ const ContestRulesPage = () => {
       <br />
       <br />
 
-      {/* Show the Register button if contest is upcoming, otherwise show "Go to contest" */}
-      {contest?.status === "upcoming" ? (
+      {contest?.status !== "completed" ? (
         <button
           className="bg-blue-600 text-white px-4 py-2 rounded-md"
           onClick={handleRegisterClick}
@@ -150,7 +147,6 @@ const ContestRulesPage = () => {
         <p className="text-red-600 text-xl">Contest Ended</p>
       )}
 
-      {/* Problems List */}
       <div className="border border-gray-400 mt-8">
         <h1 className="bg-gray-300 py-2 px-3">Problems List</h1>
         {contest?.status === "upcoming" ? (

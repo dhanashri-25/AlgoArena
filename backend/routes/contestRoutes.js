@@ -1,5 +1,5 @@
 import express from "express";
-import { User,Contest, Question } from "../models/User.js"; // Ensure Contest & Question are exported from the correct file
+import { User, Contest, Question } from "../models/User.js"; // Ensure Contest & Question are exported from the correct file
 
 const router = express.Router();
 
@@ -31,7 +31,9 @@ router.get("/current-contest", async (req, res) => {
 
 router.get("/current", async (req, res) => {
   try {
-    const currentContests = await Contest.find({ status: "current" });
+    const currentContests = await Contest.find({ status: "current" }).populate(
+      "questions"
+    ); // "questions" field ka pura document fetch karega
     res.json(currentContests);
   } catch (error) {
     res.status(500).json({ error: error.message });
