@@ -57,7 +57,8 @@ const ContestSchema = new mongoose.Schema(
     questions: [{ type: mongoose.Schema.Types.ObjectId, ref: "Question" }],
     contestDate: { type: Date, required: true },
     attemptedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
-    status: { type: String, enum: ['upcoming', 'current', 'completed'], default: 'upcoming' }
+    status: { type: String, enum: ['upcoming', 'current', 'completed'], default: 'upcoming' },
+    registeredUsers:[{type:mongoose.Schema.Types.ObjectId,ref:"User"}],
 
   },
   { timestamps: true }
