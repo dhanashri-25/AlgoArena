@@ -8,6 +8,8 @@ import "./jobs/scheduleContest.js";
 import axios from "axios";
 import contestRoutes from "./routes/contestRoutes.js";
 import './Scheduler.js'
+import practiceRoutes from "./routes/practiceRoutes.js";
+
 
 dotenv.config();
 const app = express();
@@ -37,7 +39,7 @@ app.use("/api", contestRoutes);
 const JUDGE0_API = "http://localhost:2358";
 
 
-
+app.use("/api",practiceRoutes);
 
 app.post("/api/run-code", async (req, res) => {
   try {
@@ -211,6 +213,7 @@ app.post("/api/submit-code", async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
 
 
 app.listen(PORT, () => {

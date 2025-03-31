@@ -14,7 +14,7 @@ const Navbar = () => {
     >
       <div className="flex gap-5 md:gap-10 items-center mb-4 md:mb-0">
         <div className="text-2xl py-2 font-bold">
-          <Link to="/">SolveSphere</Link>
+          <Link to="/">AlgoArena</Link>
         </div>
         <div className="flex gap-3 text-lg">
           <Link

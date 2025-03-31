@@ -1,58 +1,36 @@
-import React from "react";
-
-const mockQuestions = [
-  {
-    id: 1,
-    title: "Two Sum",
-    status: "solved", // or "unsolved"
-    acceptance: "55.1%",
-    difficulty: "Easy",
-    solutionAvailable: true,
-  },
-  {
-    id: 2,
-    title: "Add Two Numbers",
-    status: "solved",
-    acceptance: "45.5%",
-    difficulty: "Medium",
-    solutionAvailable: true,
-  },
-  {
-    id: 3,
-    title: "Longest Substring Without Repeating Characters",
-    status: "solved",
-    acceptance: "36.4%",
-    difficulty: "Medium",
-    solutionAvailable: true,
-  },
-  {
-    id: 4,
-    title: "Median of Two Sorted Arrays",
-    status: "unsolved",
-    acceptance: "43.0%",
-    difficulty: "Hard",
-    solutionAvailable: true,
-  },
-  {
-    id: 5,
-    title: "Longest Palindromic Substring",
-    status: "solved",
-    acceptance: "35.3%",
-    difficulty: "Medium",
-    solutionAvailable: true,
-  },
-  {
-    id: 6,
-    title: "Zigzag Conversion",
-    status: "unsolved",
-    acceptance: "50.9%",
-    difficulty: "Medium",
-    solutionAvailable: false,
-  },
-  // ...add more
-];
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 
 const PracticePage = () => {
+  const [questions, setQuestions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchQuestions = async () => {
+      try {
+        // Fetch only questions from completed contests
+        const response = await axios.get("http://localhost:5000/api/practice");
+        setQuestions(response.data);
+      } catch (err) {
+        setError("Failed to fetch questions.");
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchQuestions();
+  }, []);
+
+  if (loading) {
+    return <p className="text-center">Loading questions...</p>;
+  }
+
+  if (error) {
+    return <p className="text-center text-red-500">{error}</p>;
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-7xl mx-auto bg-white rounded-lg shadow p-6">
@@ -103,8 +81,8 @@ const PracticePage = () => {
             </tr>
           </thead>
           <tbody>
-            {mockQuestions.map((q) => (
-              <tr key={q.id} className="border-b hover:bg-gray-50">
+            {questions.map((q) => (
+              <tr key={q._id} className="border-b hover:bg-gray-50">
                 <td className="p-3">
                   {q.status === "solved" ? (
                     <span className="text-green-600">&#10003;</span>
@@ -113,7 +91,7 @@ const PracticePage = () => {
                   )}
                 </td>
                 <td className="p-3 text-blue-600">
-                  {q.id}. {q.title}
+                  {q.quesNo}. {q.title}
                 </td>
                 <td className="p-3">
                   {q.solutionAvailable ? (
@@ -122,7 +100,7 @@ const PracticePage = () => {
                     <span className="text-gray-400">&#128196;</span>
                   )}
                 </td>
-                <td className="p-3">{q.acceptance}</td>
+                <td className="p-3">{q.acceptance || "N/A"}</td>
                 <td className="p-3">
                   {q.difficulty === "Easy" && (
                     <span className="text-green-600">{q.difficulty}</span>
