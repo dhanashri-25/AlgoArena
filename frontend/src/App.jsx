@@ -11,11 +11,16 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import LoginPage from "./auth/LoginPage";
 import SignupPage from "./auth/SignupPage";
 import Code from "./components/CodeEditor/Code";
+
 const App = () => {
-  const location = useLocation(); //for getting current route
+  const location = useLocation(); // For getting the current route
+
+  // Check if the navbar should be hidden
+  const hideNavbar = location.pathname === "/code" || /^\/code\/[^/]+$/.test(location.pathname);
+
   return (
-    <div className="">
-      {location.pathname !== "/code" && <Navbar />}
+    <div>
+      {!hideNavbar && <Navbar />}
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route
@@ -26,7 +31,6 @@ const App = () => {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/compete"
           element={
@@ -35,19 +39,15 @@ const App = () => {
             </ProtectedRoute>
           }
         />
-
         <Route path="/rules" element={<ContestRulesPage />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/submit" element={<Result />} />
-        <Route path="/code" element={<Code />} />
+        <Route path="/code/:id" element={<Code />} />
       </Routes>
     </div>
   );
 };
 
 export default App;
-
-//buttons-#4079DA
-// bg of homepage-#E8F1FF

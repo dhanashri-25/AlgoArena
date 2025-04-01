@@ -1,5 +1,7 @@
+// PracticePage.jsx
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { Link } from "react-router-dom";
 
 const PracticePage = () => {
   const [questions, setQuestions] = useState([]);
@@ -35,6 +37,7 @@ const PracticePage = () => {
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-7xl mx-auto bg-white rounded-lg shadow p-6">
         <div className="flex flex-wrap gap-4 mb-4">
+          {/* Your filter and search elements remain unchanged */}
           <select className="border border-gray-300 rounded px-3 py-2 focus:outline-none">
             <option>Lists</option>
             <option>All Questions</option>
@@ -91,7 +94,10 @@ const PracticePage = () => {
                   )}
                 </td>
                 <td className="p-3 text-blue-600">
-                  {q.quesNo}. {q.title}
+                  {/* When the user clicks the question, redirect to /code/:id */}
+                  <Link to={`/code/${q._id}`}>
+                    {q.quesNo}. {q.title}
+                  </Link>
                 </td>
                 <td className="p-3">
                   {q.solutionAvailable ? (
