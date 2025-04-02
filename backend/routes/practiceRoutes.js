@@ -40,7 +40,7 @@ router.get("/:id", async (req, res) => {
     const question = await Question.findById(req.params.id)
       .populate("testcases")
       .exec();
-    if (!question) return res.status(404).json({ error: "Question not found" });
+    if (!question) return res.status(404).json({ error: "Question not found",success:false });
     res.json(question);
   } catch (error) {
     res.status(500).json({ error: "Server error" });

@@ -16,7 +16,8 @@ const App = () => {
   const location = useLocation(); // For getting the current route
 
   // Check if the navbar should be hidden
-  const hideNavbar = location.pathname === "/code" || /^\/code\/[^/]+$/.test(location.pathname);
+  const hideNavbar =
+    location.pathname === "/code" || /^\/code\/[^/]+$/.test(location.pathname);
 
   return (
     <div>

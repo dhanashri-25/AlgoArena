@@ -106,4 +106,70 @@ router.post("/register", async (req, res) => {
     return res.status(500).json({ message: "Server error" });
   }
 });
+
+router.post("/unregister", async (req, res) => {
+  try {
+    console.log("Received unregistration request:", req.body);
+    const { contestId, userId } = req.body;
+
+    // Validate user
+    const user = await User.findById(userId);
+    if (!user) {
+      console.log("User not found");
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Validate contest
+    const contest = await Contest.findById(contestId);
+    if (!contest) {
+      console.log("Contest not found");
+      return res.status(404).json({ message: "Contest not found" });
+    }
+
+    // Check if the user is registered
+    if (
+      !contest.registeredUsers ||
+      !contest.registeredUsers.some((id) => id.toString() === userId.toString())
+    ) {
+      console.log("User is not registered in the contest");
+      return res
+        .status(400)
+        .json({ message: "User is not registered in the contest" });
+    }
+
+    // Remove the user from the registeredUsers array
+    contest.registeredUsers = contest.registeredUsers.filter(
+      (id) => id.toString() !== userId.toString()
+    );
+
+    await contest.save();
+    console.log("Unregistration successful");
+    return res.json({ message: "Unregistered successfully!" });
+  } catch (error) {
+    console.error("Error during unregistration:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+});
+
+
+
+// Route to fetch a contest by ID
+router.get('/contest/:id', async (req, res) => {
+  try {
+    const contestId = req.params.id;
+    const contest = await Contest.findById(contestId).populate({
+      path: 'questions',
+      populate: { path: 'testcases' },
+    });
+
+    if (!contest) {
+      return res.status(404).json({ error: 'Contest not found' });
+    }
+
+    res.json({ contest });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;

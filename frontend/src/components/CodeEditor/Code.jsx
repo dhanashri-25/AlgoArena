@@ -40,6 +40,8 @@ const Code = () => {
   const [question, setQuestion] = useState(null);
   const [error, setError] = useState(null);
 
+  const [isQuestion, setIsQuestion] = useState(false);
+
   // Theme classes
   const themeClass = isDarkMode
     ? "bg-[#131313] text-white"
@@ -76,14 +78,16 @@ const Code = () => {
       const response = await axios.get(`http://localhost:5000/api/${id}`);
       console.log("API Response:", response.data);
 
-      if (!response.data) {
+      if (!response) {
+        setIsQuestion(true);
         throw new Error("No question found.");
       }
-
-      // Set the question and update the selected problem and code accordingly.
       setQuestion(response.data);
       setSelectedProblem(response.data);
-      setCode(response.data.templateCode?.[selectedLang] || "# Write your solution here");
+      setCode(
+        response.data.templateCode?.[selectedLang] ||
+          "# Write your solution here"
+      );
     } catch (err) {
       console.error("Error fetching question:", err);
       setError("Failed to load question.");
@@ -92,15 +96,24 @@ const Code = () => {
     }
   };
 
-  // Function to fetch random contest problems
-  const getRandomProblems = async () => {
+  const getRandomProblems = async (contestId) => {
     try {
-      const response = await fetch("http://localhost:5000/api/current-contest");
+      const response = await fetch(
+        `http://localhost:5000/api/contest/${contestId}`
+      );
       const data = await response.json();
-      setRandomProblems(data.problems);
-      if (data.problems && data.problems.length > 0) {
-        setSelectedProblem(data.problems[0]);
-        setCode(data.problems[0]?.templateCode?.[selectedLang] || "# Write your solution here");
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to fetch contest problems");
+      }
+
+      setRandomProblems(data.contest.questions);
+      if (data.contest.questions && data.contest.questions.length > 0) {
+        setSelectedProblem(data.contest.questions[0]);
+        setCode(
+          data.contest.questions[0]?.templateCode?.[selectedLang] ||
+            "# Write your solution here"
+        );
       }
       setIsLoading(false);
     } catch (error) {
@@ -110,11 +123,14 @@ const Code = () => {
 
   // Determine which function to call based on the presence of an ID
   useEffect(() => {
-    if (id) {
-      fetchQuestionById();
-    } else {
-      getRandomProblems();
-    }
+    const fetchData = async () => {
+      const question = await fetchQuestionById();
+      if (!question) {
+        getRandomProblems(id);
+      }
+    };
+
+    fetchData();
   }, [id]);
 
   // Improved useEffect to prevent memory leaks (only run once on mount)
@@ -123,7 +139,9 @@ const Code = () => {
       if (document.visibilityState === "hidden") {
         setSwitchCount((prev) => prev + 1);
         if (switchCount === 0) {
-          setModalMessage("Don't switch tabs! Your contest will be auto-submitted after 2 more tab switches.");
+          setModalMessage(
+            "Don't switch tabs! Your contest will be auto-submitted after 2 more tab switches."
+          );
           setShowModal(true);
         }
       }
@@ -144,7 +162,9 @@ const Code = () => {
     }
     setIsRunning(true);
     setOutput("Running...");
-    const selectedLanguage = languages.find((lang) => lang.value === selectedLang);
+    const selectedLanguage = languages.find(
+      (lang) => lang.value === selectedLang
+    );
     const testCasesForJudge = selectedProblem.testcases;
     console.log("Test cases before", testCasesForJudge);
 
@@ -170,7 +190,9 @@ const Code = () => {
       const resultArray = Array.isArray(result.results) ? result.results : [];
       const newTestCases = resultArray.map((res, idx) => {
         const cleanOutput = res.stdout?.trim().replace(/\r\n/g, "\n");
-        const expectedOutput = (testCasesForJudge[idx]?.output || "").trim().replace(/\r\n/g, "\n");
+        const expectedOutput = (testCasesForJudge[idx]?.output || "")
+          .trim()
+          .replace(/\r\n/g, "\n");
         const input = testCasesForJudge[idx]?.input.map((val, index) =>
           index % 2 === 0 ? (
             <span key={index} className="text-blue-500">
@@ -179,7 +201,9 @@ const Code = () => {
           ) : (
             <span key={index}>
               <span className="text-green-500">{val}</span>
-              {index !== testCasesForJudge[idx].input.length - 1 && <span> , </span>}
+              {index !== testCasesForJudge[idx].input.length - 1 && (
+                <span> , </span>
+              )}
             </span>
           )
         );
@@ -195,7 +219,9 @@ const Code = () => {
       });
 
       setTestCases(newTestCases);
-      setOutput(newTestCases.map((tc) => `Test Case ${tc.id}: ${tc.status}`).join("\n"));
+      setOutput(
+        newTestCases.map((tc) => `Test Case ${tc.id}: ${tc.status}`).join("\n")
+      );
     } catch (error) {
       setOutput(`Request failed: ${error.message}`);
       console.error("Error running code:", error);
@@ -213,7 +239,9 @@ const Code = () => {
     }
     setIsRunning(true);
     setOutput("Submitting...");
-    const selectedLanguage = languages.find((lang) => lang.value === selectedLang);
+    const selectedLanguage = languages.find(
+      (lang) => lang.value === selectedLang
+    );
     const testCasesForJudge = selectedProblem.testcases;
     console.log("Test cases before", testCasesForJudge);
 
@@ -238,7 +266,9 @@ const Code = () => {
         setShowModal(true);
         setCorrect(true);
       } else {
-        setModalMessage("❌ Wrong answer. Please check your solution and try again.");
+        setModalMessage(
+          "❌ Wrong answer. Please check your solution and try again."
+        );
         setShowModal(true);
       }
 
@@ -246,7 +276,9 @@ const Code = () => {
       const resultArray = Array.isArray(result.results) ? result.results : [];
       const newTestCases = resultArray.map((res) => {
         const cleanOutput = res.stdout?.trim().replace(/\r\n/g, "\n");
-        const expectedOutput = (testCasesForJudge[idx]?.output || "").trim().replace(/\r\n/g, "\n");
+        const expectedOutput = (testCasesForJudge[idx]?.output || "")
+          .trim()
+          .replace(/\r\n/g, "\n");
         const input = testCasesForJudge[idx]?.input.map((val, index) =>
           index % 2 === 0 ? (
             <span key={index} className="text-blue-500">
@@ -255,7 +287,9 @@ const Code = () => {
           ) : (
             <span key={index}>
               <span className="text-green-500">{val}</span>
-              {index !== testCasesForJudge[idx].input.length - 1 && <span> , </span>}
+              {index !== testCasesForJudge[idx].input.length - 1 && (
+                <span> , </span>
+              )}
             </span>
           )
         );
@@ -271,7 +305,9 @@ const Code = () => {
       });
 
       setTestCases(newTestCases);
-      setOutput(newTestCases.map((tc) => `Test Case ${tc.id}: ${tc.status}`).join("\n"));
+      setOutput(
+        newTestCases.map((tc) => `Test Case ${tc.id}: ${tc.status}`).join("\n")
+      );
     } catch (error) {
       setOutput(`Request failed: ${error.message}`);
       console.error("Error running code:", error);
@@ -376,13 +412,19 @@ const Code = () => {
           >
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-bold">CodeJudge</h3>
-              <button onClick={() => setShowModal(false)} className="text-gray-500 hover:text-gray-700">
+              <button
+                onClick={() => setShowModal(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
                 ✖
               </button>
             </div>
             <div className="py-4">{modalMessage}</div>
             <div className="flex justify-end">
-              <button onClick={() => setShowModal(false)} className={`${buttonClass} px-4 py-2 rounded-md`}>
+              <button
+                onClick={() => setShowModal(false)}
+                className={`${buttonClass} px-4 py-2 rounded-md`}
+              >
                 Close
               </button>
             </div>
@@ -394,3 +436,22 @@ const Code = () => {
 };
 
 export default Code;
+
+// Function to fetch random contest problems
+// const getRandomProblems = async () => {
+//   try {
+//     const response = await fetch("http://localhost:5000/api/current-contest");
+//     const data = await response.json();
+//     setRandomProblems(data.problems);
+//     if (data.problems && data.problems.length > 0) {
+//       setSelectedProblem(data.problems[0]);
+//       setCode(
+//         data.problems[0]?.templateCode?.[selectedLang] ||
+//           "# Write your solution here"
+//       );
+//     }
+//     setIsLoading(false);
+//   } catch (error) {
+//     console.error("Error fetching contest problems:", error);
+//   }
+// };
