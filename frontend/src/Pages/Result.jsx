@@ -1,24 +1,29 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import { useParams } from "react-router-dom";
 
 const ResultPage = () => {
-  // Dummy data – replace with your real contest results and leaderboard data
-  const contestSummary = {
-    name: "Weekly DSA Contest #23",
-    duration: "90 minutes",
-    participants: 120,
-  };
+  // Extract contestId from the URL (e.g., /contest/123/results)
+  const { contestId } = useParams();
+  const [data, setData] = useState(null);
 
-  const questions = [
-    { id: 1, title: "Two Sum", timeTaken: "1m 30s", status: "Solved" },
-    { id: 2, title: "House Robber", timeTaken: "2m 15s", status: "Solved" },
-    { id: 3, title: "Longest Substring", timeTaken: "N/A", status: "Unsolved" },
-  ];
+  useEffect(() => {
+    // Fetch contest result data from your API using the contestId.
+    axios
+      .get(`/api/contest/${contestId}/results`)
+      .then((res) => setData(res.data))
+      .catch((err) => console.error(err));
+  }, [contestId]);
 
-  const leaderboard = [
-    { rank: 1, username: "user123", solved: 10, totalTime: "15m" },
-    { rank: 2, username: "codeMaster", solved: 9, totalTime: "18m" },
-    { rank: 3, username: "devGuru", solved: 8, totalTime: "20m" },
-  ];
+  if (!data) {
+    return (
+      <div className="min-h-screen flex justify-center items-center">
+        Loading results...
+      </div>
+    );
+  }
+
+  const { contestSummary, questions, leaderboard } = data;
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
@@ -40,8 +45,7 @@ const ResultPage = () => {
               <tr>
                 <th className="p-3">#</th>
                 <th className="p-3">Title</th>
-                <th className="p-3">Time Taken</th>
-                <th className="p-3">Status</th>
+                <th className="p-3">Points</th>
               </tr>
             </thead>
             <tbody>
@@ -49,14 +53,7 @@ const ResultPage = () => {
                 <tr key={q.id} className="border-b hover:bg-gray-50">
                   <td className="p-3">{index + 1}</td>
                   <td className="p-3 text-blue-600">{q.title}</td>
-                  <td className="p-3">{q.timeTaken}</td>
-                  <td className="p-3">
-                    {q.status === "Solved" ? (
-                      <span className="text-green-600">Solved</span>
-                    ) : (
-                      <span className="text-red-600">Unsolved</span>
-                    )}
-                  </td>
+                  <td className="p-3">{q.points}</td>
                 </tr>
               ))}
             </tbody>
@@ -73,15 +70,24 @@ const ResultPage = () => {
                 <th className="p-3">Username</th>
                 <th className="p-3">Problems Solved</th>
                 <th className="p-3">Total Time</th>
+                <th className="p-3">Score</th>
               </tr>
             </thead>
             <tbody>
               {leaderboard.map((user) => (
                 <tr key={user.rank} className="border-b hover:bg-gray-50">
                   <td className="p-3">{user.rank}</td>
-                  <td className="p-3 text-blue-600">{user.username}</td>
+                  <td className="p-3 flex items-center space-x-2">
+                    <img
+                      src={user.profilePic || "default-avatar.png"}
+                      alt="avatar"
+                      className="w-8 h-8 rounded-full"
+                    />
+                    <span className="text-blue-600">{user.username}</span>
+                  </td>
                   <td className="p-3">{user.solved}</td>
-                  <td className="p-3">{user.totalTime}</td>
+                  <td className="p-3">{user.totalTime} sec</td>
+                  <td className="p-3">{user.score}</td>
                 </tr>
               ))}
             </tbody>

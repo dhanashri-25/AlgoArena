@@ -72,10 +72,10 @@ const ContestResultSchema = new mongoose.Schema(
     solvedQuestions: [
       {
         question: { type: mongoose.Schema.Types.ObjectId, ref: "Question" },
-        isCorrect: { type: Boolean, required: true },
-        timeTaken: { type: Number }, 
       },
     ],
+
+    totalTime:{type: Number},
     rank: { type: Number }, 
   },
   { timestamps: true }

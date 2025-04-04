@@ -246,6 +246,7 @@ const Code = () => {
     console.log("Test cases before", testCasesForJudge);
 
     const requestData = {
+      contestId: id,
       language: selectedLanguage,
       language_id: selectedLanguage.id,
       code,
