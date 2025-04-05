@@ -79,7 +79,7 @@ const ContestRulesPage = () => {
   const handleConfirmRegister = async () => {
     try {
       console.log("Confirming registration for contest:", contest._id);
-      await axios.post(`http://localhost:5000/api/register`, {
+      await axios.post(`http://localhost:5000/api/contests/register`, {
         contestId: contest._id,
         userId: currentUser.id,
       });
@@ -99,7 +99,7 @@ const ContestRulesPage = () => {
   const handleUnregister = async () => {
     try {
       console.log("Unregistering user from contest:", contest._id);
-      await axios.post(`http://localhost:5000/api/unregister`, {
+      await axios.post(`http://localhost:5000/api/contests/unregister`, {
         contestId: contest._id,
         userId: currentUser.id,
       });

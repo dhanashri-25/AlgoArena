@@ -12,7 +12,9 @@ const PracticePage = () => {
     const fetchQuestions = async () => {
       try {
         // Fetch only questions from completed contests
-        const response = await axios.get("http://localhost:5000/api/practice");
+        const response = await axios.get(
+          "http://localhost:5000/api/questions/practice"
+        );
         setQuestions(response.data);
       } catch (err) {
         setError("Failed to fetch questions.");

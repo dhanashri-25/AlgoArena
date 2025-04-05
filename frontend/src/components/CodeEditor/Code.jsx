@@ -75,7 +75,9 @@ const Code = () => {
         return;
       }
 
-      const response = await axios.get(`http://localhost:5000/api/${id}`);
+      const response = await axios.get(
+        `http://localhost:5000/api/questions/${id}`
+      );
       console.log("API Response:", response.data);
 
       if (!response) {
@@ -99,7 +101,7 @@ const Code = () => {
   const getRandomProblems = async (contestId) => {
     try {
       const response = await fetch(
-        `http://localhost:5000/api/contest/${contestId}`
+        `http://localhost:5000/api/contests/contest/${contestId}`
       );
       const data = await response.json();
 
@@ -177,8 +179,9 @@ const Code = () => {
     };
 
     try {
-      const response = await fetch("http://localhost:5000/api/run-code", {
+      const response = await fetch("http://localhost:5000/api/code/run-code", {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(requestData),
       });
@@ -255,11 +258,15 @@ const Code = () => {
     };
 
     try {
-      const response = await fetch("http://localhost:5000/api/submit-code", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(requestData),
-      });
+      const response = await fetch(
+        "http://localhost:5000/api/code/submit-code",
+        {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(requestData),
+        }
+      );
       const result = await response.json();
 
       if (result.success) {
@@ -437,22 +444,3 @@ const Code = () => {
 };
 
 export default Code;
-
-// Function to fetch random contest problems
-// const getRandomProblems = async () => {
-//   try {
-//     const response = await fetch("http://localhost:5000/api/current-contest");
-//     const data = await response.json();
-//     setRandomProblems(data.problems);
-//     if (data.problems && data.problems.length > 0) {
-//       setSelectedProblem(data.problems[0]);
-//       setCode(
-//         data.problems[0]?.templateCode?.[selectedLang] ||
-//           "# Write your solution here"
-//       );
-//     }
-//     setIsLoading(false);
-//   } catch (error) {
-//     console.error("Error fetching contest problems:", error);
-//   }
-// };

@@ -14,9 +14,9 @@ const CompetePage = () => {
       try {
         const [ongoingResponse, upcomingResponse, pastResponse] =
           await Promise.all([
-            axios.get("http://localhost:5000/api/current"),
-            axios.get("http://localhost:5000/api/upcoming"),
-            axios.get("http://localhost:5000/api/completed"),
+            axios.get("http://localhost:5000/api/contests/current"),
+            axios.get("http://localhost:5000/api/contests/upcoming"),
+            axios.get("http://localhost:5000/api/contests/completed"),
           ]);
 
         setOngoingContests(ongoingResponse.data);
