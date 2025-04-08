@@ -8,7 +8,7 @@ export const middle = (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, "abcd"); // Verify the token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET); // Verify the token
     req.userId = decoded.id; // Extract user ID from token payload
     next(); // Pass control to next middleware
   } catch (error) {

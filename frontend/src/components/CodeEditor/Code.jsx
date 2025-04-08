@@ -109,6 +109,11 @@ const Code = () => {
         buttonClass={buttonClass}
         headerClass={headerClass}
       />
+      {/* <div>
+         <VideoFeed onStreamReady={setVideoElement} />
+         <DetectMultipleFaces videoElement={videoElement} />
+         <DetectMobile videoElement={videoElement} />
+       </div> */}
       <Split
         className="flex h-[calc(100vh-70px)]"
         sizes={[40, 60]}

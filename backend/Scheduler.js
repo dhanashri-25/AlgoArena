@@ -101,80 +101,144 @@
 //   }
 // });
 
+import cron from "node-cron";
+import { Question, Contest } from "./models/User.js";
 
-
-
-import cron from 'node-cron';
-import { Question, Contest } from './models/User.js';
-
-// 🔧 Helper function for testing: returns current time rounded to the minute
-function getCurrentMinuteRoundedTime() {
-  const now = new Date();
-  now.setSeconds(0, 0); // truncate seconds and milliseconds
-  return now;
+// Helper functions for production scheduling
+function getTodayAtHour(hour) {
+  const today = new Date();
+  today.setHours(hour, 0, 0, 0);
+  return today;
 }
 
+function getTomorrowAtHour(hour) {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  tomorrow.setHours(hour, 0, 0, 0);
+  return tomorrow;
+}
+
+// New helper function for testing: returns a Date object a few minutes ahead
+function getTestTime(minutesAhead) {
+  const date = new Date();
+  date.setMinutes(date.getMinutes() + minutesAhead);
+  return date;
+}
+
+// Toggle test mode
+const testMode = true;
+
+// For testing, schedule contests relative to the current time.
+// Otherwise, use the production times (10 AM for today and tomorrow).
+const contestTime = testMode ? getTestTime(1) : getTodayAtHour(10);
+const upcomingTime = testMode ? getTestTime(2) : getTomorrowAtHour(10);
+
 /**
- * 🔁 Job 1: Runs every 1 minute
- * - Creates a new contest with current minute timestamp
- * - Simulates "current" and "upcoming" status logic
+ * Job 1: In production, runs at 10 AM daily.
+ * In test mode, it runs at contestTime (1 minute ahead of now).
+ *  - Promotes an upcoming contest for "today" to current OR creates today’s contest as current.
+ *  - Ensures that tomorrow’s contest is created as upcoming.
  */
-cron.schedule('* * * * *', async () => {
-  try {
-    console.log("\n[Job 1] Running at:", new Date().toLocaleString());
+cron.schedule(
+  testMode
+    ? `0 ${contestTime.getMinutes()} ${contestTime.getHours()} * * *`
+    : "0 0 10 * * *",
+  async () => {
+    try {
+      console.log("Job 1: Running contest promotion and creation.");
 
-    const currentTime = getCurrentMinuteRoundedTime();
+      // Use scheduled times based on the mode
+      const todayContestTime = contestTime;
+      const tomorrowContestTime = upcomingTime;
 
-    // Check if a contest already exists for this timestamp
-    let existingContest = await Contest.findOne({ contestDate: currentTime });
-
-    if (existingContest) {
-      console.log(`ℹ️ Contest at ${currentTime.toLocaleString()} already exists with status: ${existingContest.status}`);
-    } else {
-      const questions = await Question.aggregate([{ $sample: { size: 4 } }]);
-      const lastContest = await Contest.findOne().sort({ contestNumber: -1 });
-      const contestNumber = lastContest ? lastContest.contestNumber + 1 : 1;
-
-      const newContest = new Contest({
-        contestNumber,
-        questions: questions.map(q => q._id),
-        contestDate: currentTime,
-        attemptedBy: [],
-        status: 'current'
+      // Check for today's contest
+      let todayContest = await Contest.findOne({
+        contestDate: todayContestTime,
       });
+      if (todayContest) {
+        if (todayContest.status === "upcoming") {
+          todayContest.status = "current";
+          await todayContest.save();
+          console.log(
+            `Promoted contest #${todayContest.contestNumber} to CURRENT (Scheduled contest time).`
+          );
+        } else {
+          console.log(
+            `Today's contest already in status: ${todayContest.status}.`
+          );
+        }
+      } else {
+        // Create a new contest as current if none exists
+        const questions = await Question.aggregate([{ $sample: { size: 4 } }]);
+        const lastContest = await Contest.findOne().sort({ contestNumber: -1 });
+        const contestNumber = lastContest ? lastContest.contestNumber + 1 : 1;
+        todayContest = new Contest({
+          contestNumber,
+          questions: questions.map((q) => q._id),
+          contestDate: todayContestTime,
+          attemptedBy: [],
+          status: "current",
+        });
+        await todayContest.save();
+        console.log(
+          `Created new CURRENT contest #${contestNumber} for test at ${todayContestTime}.`
+        );
+      }
 
-      await newContest.save();
-      console.log(`✅ Created NEW contest #${contestNumber} at ${currentTime.toLocaleString()} with status: CURRENT`);
+      // Check for tomorrow's contest
+      let tomorrowContest = await Contest.findOne({
+        contestDate: tomorrowContestTime,
+      });
+      if (!tomorrowContest) {
+        const questions = await Question.aggregate([{ $sample: { size: 4 } }]);
+        const lastContest = await Contest.findOne().sort({ contestNumber: -1 });
+        const contestNumber = lastContest ? lastContest.contestNumber + 1 : 1;
+        tomorrowContest = new Contest({
+          contestNumber,
+          questions: questions.map((q) => q._id),
+          contestDate: tomorrowContestTime,
+          attemptedBy: [],
+          status: "upcoming",
+        });
+        await tomorrowContest.save();
+        console.log(
+          `Created new UPCOMING contest #${contestNumber} for test at ${tomorrowContestTime}.`
+        );
+      } else {
+        console.log("Tomorrow's contest already exists.");
+      }
+    } catch (error) {
+      console.error("Error in Job 1:", error);
     }
-
-  } catch (error) {
-    console.error('❌ Error in Job 1:', error);
   }
-});
+);
 
 /**
- * 🟥 Job 2: Runs every 2 minutes
- * - Marks any contest from exactly 2 minutes ago as "completed"
+ * Job 2: In production, runs at 12 PM daily.
+ * In test mode, it runs at upcomingTime (2 minutes ahead of now).
+ *  - Marks today's contest (that was scheduled in Job 1) as completed.
  */
-cron.schedule('*/2 * * * *', async () => {
-  try {
-    console.log("\n[Job 2] Running at:", new Date().toLocaleString());
-
-    const timeTwoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
-    timeTwoMinutesAgo.setSeconds(0, 0);
-
-    const result = await Contest.updateOne(
-      { contestDate: timeTwoMinutesAgo, status: 'current' },
-      { $set: { status: 'completed' } }
-    );
-
-    if (result.modifiedCount > 0) {
-      console.log(`✅ Marked contest at ${timeTwoMinutesAgo.toLocaleString()} as COMPLETED`);
-    } else {
-      console.log(`ℹ️ No contest to complete at ${timeTwoMinutesAgo.toLocaleString()}`);
+cron.schedule(
+  testMode
+    ? `0 ${upcomingTime.getMinutes()} ${upcomingTime.getHours()} * * *`
+    : "0 0 12 * * *",
+  async () => {
+    try {
+      console.log("Job 2: Marking today's contest as completed.");
+      const todayContestTime = contestTime;
+      const result = await Contest.updateOne(
+        { contestDate: todayContestTime, status: "current" },
+        { $set: { status: "completed" } }
+      );
+      if (result.modifiedCount > 0) {
+        console.log("Today's contest has been marked as COMPLETED.");
+      } else {
+        console.log(
+          "No contest was updated. It might have been already completed or not created."
+        );
+      }
+    } catch (error) {
+      console.error("Error in Job 2:", error);
     }
-
-  } catch (error) {
-    console.error('❌ Error in Job 2:', error);
   }
-});
+);

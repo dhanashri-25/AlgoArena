@@ -42,16 +42,16 @@ router.post("/run-code", async (req, res) => {
         }
 
         finalSourceCode = finalSourceCode.replace(
-          new RegExp(`\\$\\{${key}\\}`, "g"),
+          new RegExp(`{${key}}`, "g"),
           value
         );
       });
 
       let source_code = "";
       if (language_id !== 71) {
-        source_code = `${finalSourceCode}\n${code}`;
+        source_code = finalSourceCode + "\n" + code;
       } else {
-        source_code = `${code}\n${finalSourceCode}`;
+        source_code = code + "\n" + finalSourceCode;
       }
 
       console.log("source code ........\n", source_code);
@@ -83,6 +83,7 @@ router.post("/run-code", async (req, res) => {
       }
       results.push(result.data);
     }
+    console.log(results);
     res.json({ results, success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -103,20 +104,6 @@ router.post("/submit-code", middle, async (req, res) => {
     }
 
     console.log("got the data correctly....................................");
-
-    let contestResult = await ContestResult.findOne({
-      user: userId,
-      contest: contestId,
-    });
-
-    if (!contestResult) {
-      contestResult = await ContestResult.create({
-        user: userId,
-        contest: contestId,
-        score: 0,
-        totalTime: 0,
-      });
-    }
 
     for (let i = 0; i < testCases.length; i++) {
       const tc = testCases[i];
@@ -142,7 +129,7 @@ router.post("/submit-code", middle, async (req, res) => {
         }
 
         finalSourceCode = finalSourceCode.replace(
-          new RegExp(`\\$\\{${key}\\}`, "g"),
+          new RegExp(`{${key}}`, "g"),
           value
         );
       });
@@ -178,6 +165,21 @@ router.post("/submit-code", middle, async (req, res) => {
 
       console.log("result................", result.data);
 
+      // Find or create a contest result for the user
+      let contestResult = await ContestResult.findOne({
+        user: userId,
+        contest: contestId,
+      });
+
+      if (!contestResult) {
+        contestResult = await ContestResult.create({
+          user: userId,
+          contest: contestId,
+          score: 0,
+          totalTime: 0,
+        });
+      }
+
       if (result.data.status.description !== "Accepted") {
         const results = [];
         results.push(result.data);
@@ -190,14 +192,6 @@ router.post("/submit-code", middle, async (req, res) => {
         return res.json({ results, index: i, success: false });
       }
     }
-
-    // ✅ Safe to access here now:
-    contestResult.score += 5;
-    await contestResult.save();
-    console.log("Updated result:", contestResult);
-
-    res.json({ message: "Accepted", success: true });
-
     contestResult.score += 5;
     await contestResult.save();
     console.log("Updated result:", contestResult);
