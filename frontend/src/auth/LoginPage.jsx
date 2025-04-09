@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import { useAuthContext } from "../Context/AuthContext";
 
 const LoginPage = () => {
   const [usernameOrEmail, setUsernameOrEmail] = useState("");
   const [password, setPassword] = useState("");
-
-  const { setData,setIsLoggedIn } = useAuthContext();
-
+  
+  const { setData, setIsLoggedIn } = useAuthContext();
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
@@ -25,15 +25,25 @@ const LoginPage = () => {
       if (data.success) {
         setData(data);
         setIsLoggedIn(true);
-        alert("Login successful!");
-        // Optionally redirect or refresh
-        navigate("/");
+        toast.success("Login successful!", {
+          position: "top-center", // Use the string instead of toast.POSITION.TOP_CENTER
+          autoClose: 2000,
+          hideProgressBar: true,
+        });
+        setTimeout(() => {
+          navigate("/");
+        }, 2000);
       }
     } catch (error) {
       console.error(error);
-      alert("Something went wrong!");
+      toast.error("Something went wrong!", {
+        position: "top-center", // Also use string here if applicable
+        autoClose: 3000,
+        hideProgressBar: true,
+      });
     }
   };
+
   return (
     <div className="flex items-center justify-center min-h-[80vh] bg-[#E8F1FF] px-4 sm:px-8 md:px-12 lg:px-16 xl:px-20">
       <div className="bg-white shadow-md rounded-lg p-8 w-full max-w-md">

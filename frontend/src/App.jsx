@@ -11,6 +11,8 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import LoginPage from "./auth/LoginPage";
 import SignupPage from "./auth/SignupPage";
 import Code from "./components/CodeEditor/Code";
+import "react-toastify/dist/ReactToastify.css";
+import { ToastContainer } from "react-toastify";
 
 const App = () => {
   const location = useLocation(); // For getting the current route
@@ -47,6 +49,18 @@ const App = () => {
         <Route path="/submit" element={<Result />} />
         <Route path="/code/:id" element={<Code />} />
       </Routes>
+
+      <ToastContainer
+        position="top-center"
+        autoClose={2000}
+        hideProgressBar
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
     </div>
   );
 };

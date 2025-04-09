@@ -16,6 +16,7 @@ import { LANGUAGES } from "../../constants/editorConstants.js";
 const Code = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+  const [contestScore, setContestScore] = useState(0);
 
   // Custom hooks
   const {
@@ -30,6 +31,7 @@ const Code = () => {
     toggleDarkMode,
   } = useTheme();
 
+  // Pass setContestScore here so the submission logic in the hook can update it.
   const {
     code,
     setCode,
@@ -40,8 +42,8 @@ const Code = () => {
     runCodeHandler,
     submitCodeHandler,
     resetCode,
-  } = useCodeSubmission();
-  
+  } = useCodeSubmission({ setContestScore });
+
   const {
     randomProblems,
     selectedProblem,
@@ -81,7 +83,9 @@ const Code = () => {
   if (error) return <p>Error: {error}</p>;
 
   return (
+    
     <div className={`min-h-screen py-3 px-3 ${themeClass}`}>
+      
       <HeaderSection
         isDarkMode={isDarkMode}
         setProblemsVisible={setProblemsVisible}
@@ -109,11 +113,7 @@ const Code = () => {
         buttonClass={buttonClass}
         headerClass={headerClass}
       />
-      {/* <div>
-         <VideoFeed onStreamReady={setVideoElement} />
-         <DetectMultipleFaces videoElement={videoElement} />
-         <DetectMobile videoElement={videoElement} />
-       </div> */}
+      {/* Additional components can go here */}
       <Split
         className="flex h-[calc(100vh-70px)]"
         sizes={[40, 60]}
@@ -169,6 +169,7 @@ const Code = () => {
             output={output}
             testCases={testCases}
             isRunning={isRunning}
+            contestScore={contestScore}
           />
         </Split>
       </Split>
@@ -181,6 +182,7 @@ const Code = () => {
           buttonClass={buttonClass}
         />
       )}
+    
     </div>
   );
 };

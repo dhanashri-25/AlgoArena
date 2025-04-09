@@ -10,9 +10,13 @@ const UserSchema = new mongoose.Schema(
     profilePic: { type: String, default: "" },
     socialLinks: { type: [String], default: [] },
 
-    contestsParticipated: [{ type: mongoose.Schema.Types.ObjectId, ref: "Contest" }],
+    contestsParticipated: [
+      { type: mongoose.Schema.Types.ObjectId, ref: "Contest" },
+    ],
     problemSolved: [{ type: mongoose.Schema.Types.ObjectId, ref: "Question" }],
-    contestHistory: [{ type: mongoose.Schema.Types.ObjectId, ref: "ContestResult" }],
+    contestHistory: [
+      { type: mongoose.Schema.Types.ObjectId, ref: "ContestResult" },
+    ],
   },
   { timestamps: true }
 );
@@ -23,7 +27,11 @@ const QuestionSchema = new mongoose.Schema(
     quesNo: { type: Number, required: true, unique: true, index: true },
     title: { type: String, required: true },
     description: { type: String, required: true },
-    difficulty: { type: String, enum: ["Easy", "Medium", "Hard"], required: true },
+    difficulty: {
+      type: String,
+      enum: ["Easy", "Medium", "Hard"],
+      required: true,
+    },
 
     testcases: [{ type: mongoose.Schema.Types.ObjectId, ref: "Testcase" }],
     attemptedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
@@ -53,7 +61,11 @@ const TestcaseSchema = new mongoose.Schema(
     input: { type: [String], required: true },
     output: { type: String, required: true },
     explanation: { type: String, default: "" },
-    forQuestion: { type: mongoose.Schema.Types.ObjectId, ref: "Question", required: true },
+    forQuestion: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Question",
+      required: true,
+    },
   },
   { timestamps: true }
 );
@@ -70,8 +82,8 @@ const ContestSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ['upcoming', 'current', 'completed'],
-      default: 'upcoming',
+      enum: ["upcoming", "current", "completed"],
+      default: "upcoming",
     },
   },
   { timestamps: true }
@@ -81,25 +93,29 @@ const ContestSchema = new mongoose.Schema(
 const ContestResultSchema = new mongoose.Schema(
   {
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-    contest: { type: mongoose.Schema.Types.ObjectId, ref: "Contest", required: true },
+    contest: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Contest",
+      required: true,
+    },
     score: { type: Number, required: true },
-
     solvedQuestions: [
       {
-        question: { type: mongoose.Schema.Types.ObjectId, ref: "Question" },
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Question",
       },
     ],
-
     totalTime: { type: Number },
     rank: { type: Number },
   },
   { timestamps: true }
 );
 
-
-
 export const User = mongoose.model("User", UserSchema);
 export const Question = mongoose.model("Question", QuestionSchema);
 export const Testcase = mongoose.model("Testcase", TestcaseSchema);
 export const Contest = mongoose.model("Contest", ContestSchema);
-export const ContestResult = mongoose.model("ContestResult", ContestResultSchema);
+export const ContestResult = mongoose.model(
+  "ContestResult",
+  ContestResultSchema
+);

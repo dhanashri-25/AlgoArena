@@ -9,7 +9,7 @@ const JUDGE0_API = "http://localhost:2358";
 
 router.post("/run-code", async (req, res) => {
   try {
-    const { language, code, testCases, language_id, wrapCode } = req.body;
+    const { language, code, testCases, language_id, wrapCode } = req.body; // data will come from frontend
     if (!code || !language || !testCases || !Array.isArray(testCases)) {
       return res.status(400).json({ error: "Missing required fields" });
     }
@@ -96,11 +96,53 @@ router.post("/submit-code", middle, async (req, res) => {
   try {
     console.log("inside judge0 .............................................");
 
-    const { language, code, testCases, language_id, wrapCode, contestId } =
-      req.body;
+    const {
+      language,
+      code,
+      testCases,
+      language_id,
+      wrapCode,
+      contestId,
+      points,
+      problemId,
+    } = req.body;
 
-    if (!code || !language || !testCases || !Array.isArray(testCases)) {
+    if (
+      !code ||
+      !language ||
+      !testCases ||
+      !Array.isArray(testCases) ||
+      !problemId
+    ) {
       return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    let contestResult = await ContestResult.findOne({
+      user: userId,
+      contest: contestId,
+    });
+
+    if (!contestResult) {
+      contestResult = await ContestResult.create({
+        user: userId,
+        contest: contestId,
+        score: 0,
+        totalTime: 0,
+        solvedQuestions: [],
+      });
+    }
+
+    // ❗ Check if the question is already solved (directly using the ObjectId in solvedQuestions array)
+    const alreadySolved = contestResult.solvedQuestions.some(
+      (qid) => String(qid) === String(problemId)
+    );
+
+    if (alreadySolved) {
+      return res.json({
+        message: "You have already submitted this problem.",
+        success: true,
+        score: contestResult.score,
+      });
     }
 
     console.log("got the data correctly....................................");
@@ -165,21 +207,6 @@ router.post("/submit-code", middle, async (req, res) => {
 
       console.log("result................", result.data);
 
-      // Find or create a contest result for the user
-      let contestResult = await ContestResult.findOne({
-        user: userId,
-        contest: contestId,
-      });
-
-      if (!contestResult) {
-        contestResult = await ContestResult.create({
-          user: userId,
-          contest: contestId,
-          score: 0,
-          totalTime: 0,
-        });
-      }
-
       if (result.data.status.description !== "Accepted") {
         const results = [];
         results.push(result.data);
@@ -192,11 +219,21 @@ router.post("/submit-code", middle, async (req, res) => {
         return res.json({ results, index: i, success: false });
       }
     }
-    contestResult.score += 5;
+
+    // ✅ Only update score if all test cases passed and question was not already solved
+    const submissionPoints = points ?? 5;
+
+    contestResult.score += submissionPoints;
+    contestResult.solvedQuestions.push(problemId);
     await contestResult.save();
+
     console.log("Updated result:", contestResult);
 
-    res.json({ message: "Accepted", success: true });
+    res.json({
+      message: "Accepted",
+      success: true,
+      score: contestResult.score,
+    });
   } catch (error) {
     console.error("Error in /api/submit-code:", error);
     res.status(500).json({ error: error.message });

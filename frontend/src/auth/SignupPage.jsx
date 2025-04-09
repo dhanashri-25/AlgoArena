@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify"; // Import toast notification
 import { useAuthContext } from "../Context/AuthContext";
 
 const SignupPage = () => {
@@ -16,7 +17,7 @@ const SignupPage = () => {
     e.preventDefault();
     const signupData = { name, username, email, password, confirmpassword };
     console.log("Sending signup data:", signupData);
-  
+
     try {
       const res = await fetch("http://localhost:5000/api/auth/signup", {
         credentials: "include",
@@ -28,20 +29,33 @@ const SignupPage = () => {
       });
       const result = await res.json();
       if (res.ok && result.success) {
-        setData(result); // for further use in profile to fetch data
+        setData(result); // For further use in profile to fetch data
         setIsLoggedIn(true);
-        alert("Signup successful");
-        navigate("/");
+        toast.success("Signup successful!", {
+          position: "top-center",
+          autoClose: 2000,
+          hideProgressBar: true,
+        });
+        setTimeout(() => {
+          navigate("/");
+        }, 2000);
       } else {
-        // If there's an error message from the backend, show it
-        alert("Signup failed: " + (result.message || "Unknown error"));
+        // Show a toast error message
+        toast.error("Signup failed: " + (result.message || "Unknown error"), {
+          position: "top-center",
+          autoClose: 3000,
+          hideProgressBar: true,
+        });
       }
     } catch (error) {
       console.error("Error during signup:", error);
-      alert("Something went wrong!");
+      toast.error("Something went wrong!", {
+        position: "top-center",
+        autoClose: 3000,
+        hideProgressBar: true,
+      });
     }
   };
-  
 
   return (
     <div className="flex items-center justify-center min-h-[80vh] bg-[#E8F1FF] px-4 sm:px-8 md:px-12 lg:px-16 xl:px-20">

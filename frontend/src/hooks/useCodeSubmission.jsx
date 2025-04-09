@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { LANGUAGES } from '../constants/editorConstants';
+import { useState } from "react";
+import { LANGUAGES } from "../constants/editorConstants";
 
 export const useCodeSubmission = () => {
   const [code, setCode] = useState("# Write your solution here");
@@ -8,7 +8,12 @@ export const useCodeSubmission = () => {
   const [testCases, setTestCases] = useState([]);
   const [correct, setCorrect] = useState(false);
 
-  const runCodeHandler = async (selectedProblem, selectedLang, setModalMessage, setShowModal) => {
+  const runCodeHandler = async (
+    selectedProblem,
+    selectedLang,
+    setModalMessage,
+    setShowModal
+  ) => {
     setCorrect(false);
     if (!selectedProblem) {
       setModalMessage("Please select a problem first!");
@@ -85,15 +90,24 @@ export const useCodeSubmission = () => {
     }
   };
 
-  const submitCodeHandler = async (contestId, selectedProblem, selectedLang, setModalMessage, setShowModal) => {
+  const submitCodeHandler = async (
+    contestId,
+    selectedProblem,
+    selectedLang,
+    setModalMessage,
+    setShowModal
+  ) => {
     setCorrect(false);
+
     if (!selectedProblem) {
       setModalMessage("Please select a problem first!");
       setShowModal(true);
       return;
     }
+
     setIsRunning(true);
     setOutput("Submitting...");
+
     const selectedLanguage = LANGUAGES.find(
       (lang) => lang.value === selectedLang
     );
@@ -104,8 +118,10 @@ export const useCodeSubmission = () => {
       language: selectedLanguage,
       language_id: selectedLanguage.id,
       code,
-      testCases: selectedProblem.testcases,
+      score: selectedProblem.points,
+      testCases: testCasesForJudge,
       wrapCode: selectedProblem.wrapperCode[selectedLang],
+      problemId: selectedProblem._id,
     };
 
     try {
@@ -118,12 +134,17 @@ export const useCodeSubmission = () => {
           body: JSON.stringify(requestData),
         }
       );
+
       const result = await response.json();
 
       if (result.success) {
         setModalMessage("✅ Congratulations! Your solution was accepted.");
         setShowModal(true);
         setCorrect(true);
+
+        if (setContestScore) {
+          setContestScore(result.score);
+        }
       } else {
         setModalMessage(
           "❌ Wrong answer. Please check your solution and try again."
@@ -131,13 +152,13 @@ export const useCodeSubmission = () => {
         setShowModal(true);
       }
 
-      const idx = result.index;
       const resultArray = Array.isArray(result.results) ? result.results : [];
-      const newTestCases = resultArray.map((res) => {
+      const newTestCases = resultArray.map((res, idx) => {
         const cleanOutput = res.stdout?.trim().replace(/\r\n/g, "\n");
         const expectedOutput = (testCasesForJudge[idx]?.output || "")
           .trim()
           .replace(/\r\n/g, "\n");
+
         const input = testCasesForJudge[idx]?.input.map((val, index) =>
           index % 2 === 0 ? (
             <span key={index} className="text-blue-500">
@@ -152,6 +173,7 @@ export const useCodeSubmission = () => {
             </span>
           )
         );
+
         return {
           id: idx + 1,
           input: input,
@@ -191,6 +213,6 @@ export const useCodeSubmission = () => {
     correct,
     runCodeHandler,
     submitCodeHandler,
-    resetCode
+    resetCode,
   };
 };
