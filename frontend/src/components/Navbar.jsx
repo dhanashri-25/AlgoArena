@@ -28,7 +28,6 @@ const Navbar = () => {
         <nav className="hidden md:flex items-center gap-6">
           <NavLink to="/practice" label="Practice" isDarkMode={isDarkMode} />
           <NavLink to="/compete" label="Compete" isDarkMode={isDarkMode} />
-          <NavLink to="/leaderboard" label="Leaderboard" isDarkMode={isDarkMode} />
         </nav>
       </div>
 
