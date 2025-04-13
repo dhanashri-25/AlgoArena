@@ -7,7 +7,7 @@ export const useCodeSubmission = () => {
   const [isRunning, setIsRunning] = useState(false);
   const [testCases, setTestCases] = useState([]);
   const [correct, setCorrect] = useState(false);
-
+  const [contestScore, setContestScore] = useState(0);
   const runCodeHandler = async (
     selectedProblem,
     selectedLang,

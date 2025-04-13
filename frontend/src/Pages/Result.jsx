@@ -1,97 +1,547 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
+import {
+  Crown,
+  Award,
+  Medal,
+  User,
+  Clock,
+  CheckCircle,
+  AlertTriangle,
+  Code,
+  Trophy,
+  ArrowLeft,
+  Clock3,
+  ListChecks,
+  FileCode2,
+  Shield,
+  Tag,
+  CalendarClock,
+  XCircle,
+} from "lucide-react";
+import { useAuthContext } from "../Context/AuthContext";
 
 const ResultPage = () => {
-  // Extract contestId from the URL (e.g., /contest/123/results)
   const { contestId } = useParams();
-  const [data, setData] = useState(null);
+  const navigate = useNavigate();
+  const { isLoggedIn, data: userData } = useAuthContext();
+  const [contestData, setContestData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [selectedQuestion, setSelectedQuestion] = useState(null);
+  const [questionType, setQuestionType] = useState(null); // 'solved' or 'unsolved'
 
   useEffect(() => {
-    // Fetch contest result data from your API using the contestId.
-    axios
-      .get(`/api/contest/${contestId}/results`)
-      .then((res) => setData(res.data))
-      .catch((err) => console.error(err));
-  }, [contestId]);
+    const fetchResults = async () => {
+      try {
+        setLoading(true);
+        const res = await axios.get(
+          `http://localhost:5000/api/contest/${contestId}/results`,
+          {
+            withCredentials: true,
+          }
+        );
+        console.log("Contest results data:", res.data);
+        setContestData(res.data);
 
-  if (!data) {
+        
+        if (res.data?.result?.[0]?.questionSubmissionTimes?.length > 0) {
+          setSelectedQuestion(
+            res.data.result[0].questionSubmissionTimes[0].questionId
+          );
+          setQuestionType("solved");
+        }
+        // If no solved questions, try to select an unsolved one
+        else if (res.data?.unsolvedQuestions?.length > 0) {
+          setSelectedQuestion(res.data.unsolvedQuestions[0]);
+          setQuestionType("unsolved");
+        }
+      } catch (err) {
+        console.error("Error fetching results:", err);
+        setError("Failed to load contest results");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchResults();
+  }, [contestId, isLoggedIn, userData]);
+
+  const formatTime = (timeString) => {
+    const date = new Date(timeString);
+    return date.toLocaleString("en-US", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+  };
+
+  const calculateTimeTaken = (startTime, submissionTime) => {
+    const start = new Date(startTime);
+    const end = new Date(submissionTime || new Date());
+    const diffMs = end - start;
+
+    const hours = Math.floor(diffMs / (1000 * 60 * 60));
+    const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
+
+    return `${hours > 0 ? `${hours}h ` : ""}${minutes}m ${seconds}s`;
+  };
+
+  const getDifficultyColor = (difficulty) => {
+    if (!difficulty) return "bg-gray-100 text-gray-800";
+
+    switch (difficulty.toLowerCase()) {
+      case "easy":
+        return "bg-green-100 text-green-800";
+      case "medium":
+        return "bg-yellow-100 text-yellow-800";
+      case "hard":
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const isQuestionSolved = (questionId) => {
+    const userContestInfo = contestData?.result?.[0] || {};
+    return userContestInfo.solvedQuestions?.some((id) => id === questionId);
+  };
+
+  if (loading) {
     return (
-      <div className="min-h-screen flex justify-center items-center">
-        Loading results...
+      <div className="min-h-screen flex justify-center items-center bg-slate-50">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+          <div className="text-xl font-semibold text-slate-700">
+            Loading contest results...
+          </div>
+        </div>
       </div>
     );
   }
 
-  const { contestSummary, questions, leaderboard } = data;
+  if (error) {
+    return (
+      <div className="min-h-screen flex justify-center items-center bg-slate-50">
+        <div className="bg-white rounded-lg shadow-lg p-6 max-w-md w-full">
+          <div className="flex items-center justify-center gap-3 text-red-600 mb-4">
+            <AlertTriangle size={24} />
+            <h2 className="text-xl font-bold">Error</h2>
+          </div>
+          <p className="text-center text-slate-700">{error}</p>
+          <button
+            onClick={() => navigate(-1)}
+            className="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-md flex items-center justify-center gap-2 transition-colors"
+          >
+            <ArrowLeft size={16} />
+            Go Back
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const userContestInfo = contestData?.result?.[0] || {};
+  const solvedQuestionsInfo = userContestInfo.questionSubmissionTimes || [];
+  const unsolvedQuestionsInfo = contestData?.unsolvedQuestions || [];
+  const contestStartTime = userContestInfo.startTime;
+
+  // Helper function to find the submission time for a question
+  const getSubmissionTime = (questionId) => {
+    const question = solvedQuestionsInfo.find(
+      (q) => q.questionId._id === questionId
+    );
+    return question?.submissionTime;
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
+    <div className="min-h-screen bg-slate-50 px-4 py-8 md:px-8">
       <div className="max-w-7xl mx-auto">
-        {/* Contest Summary */}
-        <div className="bg-white rounded-lg shadow p-6 mb-8">
-          <h1 className="text-3xl font-bold">{contestSummary.name}</h1>
-          <p className="mt-2 text-gray-600">
-            Duration: {contestSummary.duration} | Participants:{" "}
-            {contestSummary.participants}
-          </p>
+        <div className="flex items-center mb-8">
+          <button
+            onClick={() => navigate(-1)}
+            className="mr-4 text-slate-600 hover:text-blue-600 transition-colors"
+          >
+            <ArrowLeft size={20} />
+          </button>
+          <h1 className="text-2xl md:text-3xl font-bold text-slate-800 flex items-center gap-3">
+            <Trophy className="text-yellow-500" size={28} />
+            Contest Results
+          </h1>
         </div>
 
-        {/* Question Performance */}
-        <div className="bg-white rounded-lg shadow p-6 mb-8 overflow-x-auto">
-          <h2 className="text-2xl font-bold mb-4">Question Performance</h2>
-          <table className="min-w-full text-left">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="p-3">#</th>
-                <th className="p-3">Title</th>
-                <th className="p-3">Points</th>
-              </tr>
-            </thead>
-            <tbody>
-              {questions.map((q, index) => (
-                <tr key={q.id} className="border-b hover:bg-gray-50">
-                  <td className="p-3">{index + 1}</td>
-                  <td className="p-3 text-blue-600">{q.title}</td>
-                  <td className="p-3">{q.points}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="bg-white rounded-xl shadow-md overflow-hidden mb-8">
+          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4">
+            <h2 className="text-white text-xl font-semibold flex items-center gap-2">
+              <User size={20} />
+              Your Performance
+            </h2>
+          </div>
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="flex flex-col items-center p-4 bg-blue-50 rounded-lg">
+                <Award className="text-blue-600 mb-2" size={32} />
+                <div className="text-3xl font-bold text-slate-800">
+                  {userContestInfo.score || 0}
+                </div>
+                <div className="text-sm text-slate-600">Total Score</div>
+              </div>
+
+              <div className="flex flex-col items-center p-4 bg-green-50 rounded-lg">
+                <CheckCircle className="text-green-600 mb-2" size={32} />
+                <div className="text-3xl font-bold text-slate-800">
+                  {userContestInfo.solvedQuestions?.length || 0}
+                </div>
+                <div className="text-sm text-slate-600">Problems Solved</div>
+              </div>
+
+              <div className="flex flex-col items-center p-4 bg-purple-50 rounded-lg">
+                <Clock className="text-purple-600 mb-2" size={32} />
+                <div className="text-3xl font-bold text-slate-800">
+                  {userContestInfo.totalTime || "0"}
+                </div>
+                <div className="text-sm text-slate-600">
+                  Total Time (seconds)
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 border-t border-slate-200 pt-4">
+              <div className="flex flex-wrap gap-2 text-sm text-slate-700">
+                <div className="flex items-center gap-1">
+                  <CalendarClock size={16} className="text-slate-500" />
+                  <span>Contest Start: {formatTime(contestStartTime)}</span>
+                </div>
+
+                <div className="flex items-center gap-1 ml-auto">
+                  <Shield size={16} className="text-slate-500" />
+                  <span>Contest ID: {userContestInfo.contest}</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Leaderboard */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-2xl font-bold mb-4">Leaderboard</h2>
-          <table className="min-w-full text-left">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="p-3">Rank</th>
-                <th className="p-3">Username</th>
-                <th className="p-3">Problems Solved</th>
-                <th className="p-3">Total Time</th>
-                <th className="p-3">Score</th>
-              </tr>
-            </thead>
-            <tbody>
-              {leaderboard.map((user) => (
-                <tr key={user.rank} className="border-b hover:bg-gray-50">
-                  <td className="p-3">{user.rank}</td>
-                  <td className="p-3 flex items-center space-x-2">
-                    <img
-                      src={user.profilePic || "default-avatar.png"}
-                      alt="avatar"
-                      className="w-8 h-8 rounded-full"
-                    />
-                    <span className="text-blue-600">{user.username}</span>
-                  </td>
-                  <td className="p-3">{user.solved}</td>
-                  <td className="p-3">{user.totalTime} sec</td>
-                  <td className="p-3">{user.score}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="bg-white rounded-xl shadow-md overflow-hidden">
+            <div className="bg-slate-800 px-6 py-4">
+              <h2 className="text-white text-lg font-semibold flex items-center gap-2">
+                <ListChecks size={20} />
+                Contest Questions
+              </h2>
+            </div>
+
+            {/* Questions Tabs */}
+            <div className="flex border-b border-slate-200">
+              <button
+                onClick={() => {}}
+                className={`flex-1 py-3 px-4 text-center font-medium transition-colors ${
+                  solvedQuestionsInfo.length > 0
+                    ? "text-blue-600 border-b-2 border-blue-600"
+                    : "text-slate-600"
+                }`}
+              >
+                Solved ({solvedQuestionsInfo.length})
+              </button>
+              <button
+                onClick={() => {}}
+                className={`flex-1 py-3 px-4 text-center font-medium transition-colors ${
+                  unsolvedQuestionsInfo.length > 0
+                    ? "text-slate-600"
+                    : "text-slate-600"
+                }`}
+              >
+                Unsolved ({unsolvedQuestionsInfo.length})
+              </button>
+            </div>
+
+            {/* Solved Questions List */}
+            <div className="p-2">
+              {solvedQuestionsInfo.length > 0 ? (
+                <div className="space-y-2">
+                  {solvedQuestionsInfo.map((question, idx) => (
+                    <button
+                      key={question.questionId._id}
+                      onClick={() => {
+                        setSelectedQuestion(question.questionId);
+                        setQuestionType("solved");
+                      }}
+                      className={`w-full text-left p-4 rounded-lg transition-colors ${
+                        selectedQuestion?._id === question.questionId._id &&
+                        questionType === "solved"
+                          ? "bg-blue-50 border-l-4 border-blue-600"
+                          : "hover:bg-slate-50 border-l-4 border-transparent"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="bg-slate-800 text-white w-8 h-8 rounded-full flex items-center justify-center font-medium">
+                          {question.questionId.quesNo || idx + 1}
+                        </div>
+                        <div className="flex-1 truncate">
+                          {question.questionId.title}
+                        </div>
+                        <div
+                          className={`text-xs px-2 py-1 rounded-full font-medium ${getDifficultyColor(
+                            question.questionId.difficulty
+                          )}`}
+                        >
+                          {question.questionId.difficulty}
+                        </div>
+                      </div>
+
+                      <div className="mt-2 flex items-center text-xs text-slate-600">
+                        <div className="flex items-center gap-1">
+                          <Trophy size={14} />
+                          <span>{question.questionId.points} pts</span>
+                        </div>
+
+                        <div className="ml-auto flex items-center gap-1 text-green-600">
+                          <CheckCircle size={14} />
+                          <span>Solved</span>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-6 text-center text-slate-500">
+                  No solved questions
+                </div>
+              )}
+            </div>
+
+            {/* Unsolved Questions List */}
+            <div className="p-2 mt-2">
+              <h3 className="text-md font-medium text-slate-700 mb-2 px-4">
+                Unsolved Questions
+              </h3>
+              {unsolvedQuestionsInfo.length > 0 ? (
+                <div className="space-y-2">
+                  {unsolvedQuestionsInfo.map((question, idx) => (
+                    <button
+                      key={question._id}
+                      onClick={() => {
+                        setSelectedQuestion(question);
+                        setQuestionType("unsolved");
+                      }}
+                      className={`w-full text-left p-4 rounded-lg transition-colors ${
+                        selectedQuestion?._id === question._id &&
+                        questionType === "unsolved"
+                          ? "bg-blue-50 border-l-4 border-blue-600"
+                          : "hover:bg-slate-50 border-l-4 border-transparent"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="bg-slate-800 text-white w-8 h-8 rounded-full flex items-center justify-center font-medium">
+                          {question.quesNo || idx + 1}
+                        </div>
+                        <div className="flex-1 truncate">{question.title}</div>
+                        <div
+                          className={`text-xs px-2 py-1 rounded-full font-medium ${getDifficultyColor(
+                            question.difficulty
+                          )}`}
+                        >
+                          {question.difficulty}
+                        </div>
+                      </div>
+
+                      <div className="mt-2 flex items-center text-xs text-slate-600">
+                        <div className="flex items-center gap-1">
+                          <Trophy size={14} />
+                          <span>{question.points} pts</span>
+                        </div>
+
+                        <div className="ml-auto flex items-center gap-1 text-red-500">
+                          <XCircle size={14} />
+                          <span>Not Solved</span>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-6 text-center text-slate-500">
+                  No unsolved questions
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="lg:col-span-2">
+            {selectedQuestion ? (
+              <div className="bg-white rounded-xl shadow-md overflow-hidden">
+                <div
+                  className={`px-6 py-4 ${
+                    questionType === "solved"
+                      ? "bg-gradient-to-r from-green-600 to-green-700"
+                      : "bg-gradient-to-r from-slate-700 to-slate-800"
+                  }`}
+                >
+                  <h2 className="text-white text-lg font-semibold flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <FileCode2 size={20} />
+                      <span>{selectedQuestion.title}</span>
+                    </div>
+                    <div
+                      className={`text-xs px-3 py-1 rounded-full font-medium ${getDifficultyColor(
+                        selectedQuestion.difficulty
+                      )}`}
+                    >
+                      {selectedQuestion.difficulty}
+                    </div>
+                  </h2>
+                </div>
+
+                <div className="p-6">
+                  <div className="mb-6">
+                    <h3 className="text-lg font-semibold text-slate-800 mb-3">
+                      Problem
+                    </h3>
+                    <div className="prose prose-slate max-w-none">
+                      <p>{selectedQuestion.description}</p>
+                    </div>
+                  </div>
+
+                  {selectedQuestion.constraints && (
+                    <div className="mb-6">
+                      <h3 className="text-lg font-semibold text-slate-800 mb-3 flex items-center gap-2">
+                        <Shield size={18} />
+                        Constraints
+                      </h3>
+                      <ul className="list-disc pl-5 space-y-1 text-slate-700">
+                        {selectedQuestion.constraints.map((constraint, idx) => (
+                          <li key={idx}>{constraint}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {selectedQuestion.tags &&
+                    selectedQuestion.tags.length > 0 && (
+                      <div className="mb-6">
+                        <h3 className="text-lg font-semibold text-slate-800 mb-3 flex items-center gap-2">
+                          <Tag size={18} />
+                          Tags
+                        </h3>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedQuestion.tags.map((tag, idx) => (
+                            <span
+                              key={idx}
+                              className="bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-sm"
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div className="bg-blue-50 rounded-lg p-4">
+                      <div className="text-sm text-slate-600">Points</div>
+                      <div className="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                        <Trophy size={20} className="text-yellow-500" />
+                        {questionType === "solved"
+                          ? selectedQuestion.points
+                          : "0"}
+                      </div>
+                    </div>
+
+                    <div
+                      className={`rounded-lg p-4 ${
+                        questionType === "solved" ? "bg-green-50" : "bg-red-50"
+                      }`}
+                    >
+                      <div className="text-sm text-slate-600">Status</div>
+                      <div
+                        className={`text-2xl font-bold flex items-center gap-2 ${
+                          questionType === "solved"
+                            ? "text-green-600"
+                            : "text-red-600"
+                        }`}
+                      >
+                        {questionType === "solved" ? (
+                          <>
+                            <CheckCircle size={20} />
+                            Solved
+                          </>
+                        ) : (
+                          <>
+                            <XCircle size={20} />
+                            Not Solved
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-slate-200 pt-6">
+                    <h3 className="text-lg font-semibold text-slate-800 mb-3 flex items-center gap-2">
+                      <Clock3 size={18} />
+                      Timing Information
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {questionType === "solved" ? (
+                        <div className="bg-slate-50 rounded-lg p-4">
+                          <div className="text-sm text-slate-600">
+                            Time to Solve
+                          </div>
+                          <div className="text-xl font-semibold text-slate-800">
+                            {calculateTimeTaken(
+                              contestStartTime,
+                              getSubmissionTime(selectedQuestion._id)
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="bg-slate-50 rounded-lg p-4">
+                          <div className="text-sm text-slate-600">Status</div>
+                          <div className="text-xl font-semibold text-red-500">
+                            Not Attempted
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="bg-slate-50 rounded-lg p-4">
+                        <div className="text-sm text-slate-600">
+                          Contest Start Time
+                        </div>
+                        <div className="text-xl font-semibold text-slate-800">
+                          {formatTime(contestStartTime)}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {questionType === "unsolved" && (
+                    <div className="mt-6 flex justify-center">
+                      <button
+                        onClick={() =>
+                          navigate(
+                            `/contest/${contestId}/solve/${selectedQuestion._id}`
+                          )
+                        }
+                        className="bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-md flex items-center gap-2 transition-colors"
+                      >
+                        <Code size={18} />
+                        Try solving this problem
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="bg-white rounded-xl shadow-md p-8 flex flex-col items-center justify-center min-h-[400px] text-slate-500">
+                <FileCode2 size={48} className="mb-4 opacity-30" />
+                <p>Select a question to view details</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

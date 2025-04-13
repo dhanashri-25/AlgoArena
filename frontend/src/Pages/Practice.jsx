@@ -11,7 +11,6 @@ const PracticePage = () => {
   useEffect(() => {
     const fetchQuestions = async () => {
       try {
-        // Fetch only questions from completed contests
         const response = await axios.get(
           "http://localhost:5000/api/questions/practice"
         );
@@ -39,12 +38,6 @@ const PracticePage = () => {
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-7xl mx-auto bg-white rounded-lg shadow p-6">
         <div className="flex flex-wrap gap-4 mb-4">
-          {/* Your filter and search elements remain unchanged */}
-          <select className="border border-gray-300 rounded px-3 py-2 focus:outline-none">
-            <option>Lists</option>
-            <option>All Questions</option>
-            <option>Favorites</option>
-          </select>
           <select className="border border-gray-300 rounded px-3 py-2 focus:outline-none">
             <option>Difficulty</option>
             <option>Easy</option>
@@ -69,9 +62,6 @@ const PracticePage = () => {
               className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none"
             />
           </div>
-          <button className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded">
-            <span className="mr-2">Pick One</span>
-          </button>
         </div>
 
         <table className="w-full border-collapse text-left">
@@ -79,10 +69,7 @@ const PracticePage = () => {
             <tr className="bg-gray-100">
               <th className="p-3 font-semibold text-gray-600 w-16">Status</th>
               <th className="p-3 font-semibold text-gray-600">Title</th>
-              <th className="p-3 font-semibold text-gray-600">Solution</th>
-              <th className="p-3 font-semibold text-gray-600">Acceptance</th>
               <th className="p-3 font-semibold text-gray-600">Difficulty</th>
-              <th className="p-3 font-semibold text-gray-600">Frequency</th>
             </tr>
           </thead>
           <tbody>
@@ -96,19 +83,10 @@ const PracticePage = () => {
                   )}
                 </td>
                 <td className="p-3 text-blue-600">
-                  {/* When the user clicks the question, redirect to /code/:id */}
                   <Link to={`/code/${q._id}`}>
                     {q.quesNo}. {q.title}
                   </Link>
                 </td>
-                <td className="p-3">
-                  {q.solutionAvailable ? (
-                    <span className="text-purple-500">&#128196;</span>
-                  ) : (
-                    <span className="text-gray-400">&#128196;</span>
-                  )}
-                </td>
-                <td className="p-3">{q.acceptance || "N/A"}</td>
                 <td className="p-3">
                   {q.difficulty === "Easy" && (
                     <span className="text-green-600">{q.difficulty}</span>
@@ -119,9 +97,6 @@ const PracticePage = () => {
                   {q.difficulty === "Hard" && (
                     <span className="text-red-600">{q.difficulty}</span>
                   )}
-                </td>
-                <td className="p-3 text-gray-400">
-                  <span className="text-sm">Locked</span>
                 </td>
               </tr>
             ))}

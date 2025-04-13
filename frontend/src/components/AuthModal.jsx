@@ -15,7 +15,7 @@ const AuthModal = ({ isOpen, onClose, isSignup }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const endpoint = isSignup ? "/api/auth/signup" : "/api/auth/login"; // API route
+    const endpoint = isSignup ? "/api/auth/signup" : "/api/auth/login"; 
     const bodyData = isSignup
       ? formData
       : { usernameOrEmail: formData.username, password: formData.password };

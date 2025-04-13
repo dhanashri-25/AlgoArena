@@ -13,6 +13,8 @@ import SignupPage from "./auth/SignupPage";
 import Code from "./components/CodeEditor/Code";
 import "react-toastify/dist/ReactToastify.css";
 import { ToastContainer } from "react-toastify";
+import Leaderboard from "./Pages/Leaderboard";
+import { ThemeProvider } from "./Context/ThemeContext";
 
 const App = () => {
   const location = useLocation(); // For getting the current route
@@ -23,44 +25,52 @@ const App = () => {
 
   return (
     <div>
-      {!hideNavbar && <Navbar />}
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route
-          path="/practice"
-          element={
-            <ProtectedRoute>
-              <Practice />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/compete"
-          element={
-            <ProtectedRoute>
-              <Compete />
-            </ProtectedRoute>
-          }
-        />
-        <Route path="/rules" element={<ContestRulesPage />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignupPage />} />
-        <Route path="/submit" element={<Result />} />
-        <Route path="/code/:id" element={<Code />} />
-      </Routes>
+      <ThemeProvider>
+        {!hideNavbar && <Navbar />}
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route
+            path="/practice"
+            element={
+              <ProtectedRoute>
+                <Practice />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/compete"
+            element={
+              <ProtectedRoute>
+                <Compete />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/rules" element={<ContestRulesPage />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignupPage />} />
+          <Route path="/submit" element={<Result />} />
+          <Route path="/code/:id" element={<Code />} />
+          <Route path="/contest/:contestId/results" element={<Result />} />
 
-      <ToastContainer
-        position="top-center"
-        autoClose={2000}
-        hideProgressBar
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-      />
+          <Route
+            path="/contest/leaderboard/:contestId"
+            element={<Leaderboard />}
+          />
+        </Routes>
+
+        <ToastContainer
+          position="top-center"
+          autoClose={2000}
+          hideProgressBar
+          newestOnTop={false}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+        />
+      </ThemeProvider>
     </div>
   );
 };

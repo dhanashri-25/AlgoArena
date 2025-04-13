@@ -89,7 +89,6 @@ const ContestSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// ---------------- ContestResult Schema ----------------
 const ContestResultSchema = new mongoose.Schema(
   {
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
@@ -105,11 +104,24 @@ const ContestResultSchema = new mongoose.Schema(
         ref: "Question",
       },
     ],
-    totalTime: { type: Number },
+
+    questionSubmissionTimes: [
+      {
+        questionId: { type: mongoose.Schema.Types.ObjectId, ref: "Question" },
+        timeInSeconds: { type: Date },
+      },
+    ],
+    totalTime: { type: Number, default: 0 },
     rank: { type: Number },
+    completed: { type: Boolean, default: false },
+    startTime: { type: Date }, // When user started the contest
+    endTime: { type: Date }, // When user ended the contest
   },
   { timestamps: true }
+  
 );
+
+
 
 export const User = mongoose.model("User", UserSchema);
 export const Question = mongoose.model("Question", QuestionSchema);

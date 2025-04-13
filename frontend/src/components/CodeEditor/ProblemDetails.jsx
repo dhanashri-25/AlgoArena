@@ -44,10 +44,7 @@ const ProblemDetails = ({ selectedProblem, isDarkMode, setProblemsVisible, butto
                   <div className="font-bold">Output:</div>
                   <div className={`${isDarkMode ? "bg-[#2d2d2d]" : "bg-gray-100"} p-2 rounded mt-1 text-xl`}><code>{tc.output}</code></div>
                 </div>
-                {/* <div>
-                  <div className="font-bold">Explanation:</div>
-                  <div className="mt-1">{tc.explanation}</div>
-                </div> */}
+                
               </div>
             ))
           ) : (

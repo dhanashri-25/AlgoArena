@@ -15,13 +15,13 @@ const HomePage = () => {
 
         <div className="mt-6 text-lg sm:text-xl flex flex-col sm:flex-row justify-center lg:justify-start space-y-3 sm:space-y-0 sm:space-x-4">
           <Link
-            to="/signup"
+            to="/compete"
             className="px-6 py-3 border border-gray-700 text-[#4B7ABD] font-bold transition-all duration-300 hover:bg-[#4B7ABD] hover:text-white hover:shadow-md"
           >
             Join a Contest
           </Link>
 
-          {/* If user is logged in, you can hide this or show a different link */}
+          
           <Link
             to="/practice"
             className="px-6 py-3 border border-gray-300 rounded-lg bg-black transition-all duration-300 hover:bg-white hover:text-black text-white"

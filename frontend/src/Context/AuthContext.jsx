@@ -9,7 +9,6 @@ export const AuthContextProvider = ({ children }) => {
 
   
   useEffect(() => {
-    //verify api call on page referesh so that logout nhi ho
     const verifyUser=async()=>{
       try{
         const res=await fetch("http://localhost:5000/api/auth/verify",{
@@ -31,7 +30,7 @@ export const AuthContextProvider = ({ children }) => {
       }
     }
     verifyUser();
-  }, []); //will word on page reload
+  }, []); 
 
 
 

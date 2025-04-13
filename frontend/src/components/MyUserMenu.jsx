@@ -43,24 +43,25 @@ const MyUserMenu = () => {
         className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded-md"
       >
         <FaUser className="text-3xl" />
-        <span className="font-semibold">{data.name}</span>
+        <span className="font-semibold">
+          {data?.name || data?.username || "Loading..."}
+        </span>
       </button>
 
       {menuOpen && (
         <div
           className="
-            absolute right-0 mt-5 bg-white
-            rounded-lg shadow-2xl
-            py-2 z-25 w-70
-          "
+        absolute right-0 mt-5 bg-white
+        rounded-lg shadow-2xl
+        py-2 z-50 w-[280px]
+      "
         >
-          {/* User Info at top of menu */}
           <Link className="flex items-center gap-2 px-4 py-2 " to="/profile">
-            <div className="inline-flex items-center p-3  rounded-full bg-[#C4C4C4] text-white">
+            <div className="inline-flex items-center p-3 rounded-full bg-[#C4C4C4] text-white">
               <FaUser className="text-2xl" />
             </div>
             <div>
-              <div className="font-semibold">{data.name}</div>
+              <div className="font-semibold">{data.name || data.username}</div>
               <div className="text-sm text-gray-500">{data.email}</div>
             </div>
           </Link>

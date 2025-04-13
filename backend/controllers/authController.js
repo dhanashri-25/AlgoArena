@@ -5,7 +5,6 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-
 // SIGNUP
 export const signup = async (req, res) => {
   try {
@@ -13,28 +12,41 @@ export const signup = async (req, res) => {
 
     // Validation
     if (!name || !username || !email || !password || !confirmpassword) {
-      return res.status(400).json({ message: "All fields are required", success: false });
+      return res
+        .status(400)
+        .json({ message: "All fields are required", success: false });
     }
 
     if (password.trim() !== confirmpassword.trim()) {
-      return res.status(400).json({ message: "Passwords do not match", success: false });
+      return res
+        .status(400)
+        .json({ message: "Passwords do not match", success: false });
     }
 
     // Check if username or email already exists
     const existingUser = await User.findOne({ $or: [{ username }, { email }] });
     if (existingUser) {
-      return res.status(400).json({ message: "Username or email already exists", success: false });
+      return res
+        .status(400)
+        .json({ message: "Username or email already exists", success: false });
     }
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create and save user
-    const newUser = new User({ name, username, email, password: hashedPassword });
+    const newUser = new User({
+      name,
+      username,
+      email,
+      password: hashedPassword,
+    });
     await newUser.save();
 
     // Generate token
-    const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+    const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, {
+      expiresIn: "7d",
+    });
 
     // Set cookie
     res.cookie("token", token, {
@@ -47,10 +59,14 @@ export const signup = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Signup successful",
-      data: { name: newUser.name, email: newUser.email },
+      data: { name: newUser.name, email: newUser.email , username: newUser.username },
     });
   } catch (error) {
-    res.status(500).json({ message: "Internal Server Error", success: false, error: error.message });
+    res.status(500).json({
+      message: "Internal Server Error",
+      success: false,
+      error: error.message,
+    });
   }
 };
 
@@ -60,7 +76,9 @@ export const login = async (req, res) => {
     const { usernameOrEmail, password } = req.body;
 
     if (!usernameOrEmail || !password) {
-      return res.status(400).json({ message: "Missing credentials", success: false });
+      return res
+        .status(400)
+        .json({ message: "Missing credentials", success: false });
     }
 
     const user = await User.findOne({
@@ -68,15 +86,21 @@ export const login = async (req, res) => {
     });
 
     if (!user) {
-      return res.status(400).json({ message: "User not found", success: false });
+      return res
+        .status(400)
+        .json({ message: "User not found", success: false });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(400).json({ message: "Invalid credentials", success: false });
+      return res
+        .status(400)
+        .json({ message: "Invalid credentials", success: false });
     }
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "7d",
+    });
 
     res.cookie("token", token, {
       httpOnly: true,
@@ -88,10 +112,14 @@ export const login = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Login successful",
-      data: { name: user.name, email: user.email },
+      data: { name: user.name, email: user.email, username: user.username },
     });
   } catch (error) {
-    res.status(500).json({ message: "Internal Server Error", success: false, error: error.message });
+    res.status(500).json({
+      message: "Internal Server Error",
+      success: false,
+      error: error.message,
+    });
   }
 };
 
@@ -106,12 +134,16 @@ export const logout = (req, res) => {
 
     res.status(200).json({ success: true, message: "Logged out successfully" });
   } catch (error) {
-    res.status(500).json({ message: "Internal Server Error", success: false, error: error.message });
+    res.status(500).json({
+      message: "Internal Server Error",
+      success: false,
+      error: error.message,
+    });
   }
 };
 
 // VERIFY
-export const verify = (req, res) => {
+export const verify = async (req, res) => {
   const token = req.cookies?.token;
 
   if (!token) {
@@ -119,7 +151,13 @@ export const verify = (req, res) => {
   }
 
   try {
-    const user = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    const user = await User.findById(decoded.id).select("name username email");
+
+    if (!user) {
+      return res.json({ authenticated: false });
+    }
     res.json({ authenticated: true, user });
   } catch (error) {
     res.json({ authenticated: false });

@@ -1,12 +1,11 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
+import { toast } from "react-toastify"; // Import toast from react-toastify
 import { useAuthContext } from "../Context/AuthContext";
 
 const LoginPage = () => {
   const [usernameOrEmail, setUsernameOrEmail] = useState("");
   const [password, setPassword] = useState("");
-  
   const { setData, setIsLoggedIn } = useAuthContext();
   const navigate = useNavigate();
 
@@ -26,10 +25,11 @@ const LoginPage = () => {
         setData(data);
         setIsLoggedIn(true);
         toast.success("Login successful!", {
-          position: "top-center", // Use the string instead of toast.POSITION.TOP_CENTER
-          autoClose: 2000,
+          position: "top-center",
+          autoClose: 2000, // milliseconds
           hideProgressBar: true,
         });
+        // Optionally delay navigation to allow the toast to be seen
         setTimeout(() => {
           navigate("/");
         }, 2000);
@@ -37,7 +37,7 @@ const LoginPage = () => {
     } catch (error) {
       console.error(error);
       toast.error("Something went wrong!", {
-        position: "top-center", // Also use string here if applicable
+        position: "top-center",
         autoClose: 3000,
         hideProgressBar: true,
       });

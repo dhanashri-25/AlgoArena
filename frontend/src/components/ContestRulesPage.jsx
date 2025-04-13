@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useLocation, Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useAuthContext } from "../Context/AuthContext";
+import { toast } from "react-toastify";
 
 const ContestRulesPage = () => {
   const location = useLocation();
@@ -9,18 +10,23 @@ const ContestRulesPage = () => {
   const navigate = useNavigate();
   const { data: currentUser, isLoggedIn } = useAuthContext();
 
-  // Local state to track if the user is registered
   const [isRegistered, setIsRegistered] = useState(false);
   const [showModal, setShowModal] = useState(false);
 
-  // Check registration status on component mount and when contest/currentUser changes
   useEffect(() => {
-    if (contest && contest.registeredUsers && currentUser) {
-      const registered = contest.registeredUsers.some(
-        (id) => id.toString() === currentUser.id.toString()
-      );
-      setIsRegistered(registered);
-    }
+    if (!contest || !currentUser) return;
+
+    const userId = currentUser.id || currentUser._id;
+
+    const registered = contest.registeredUsers?.some(
+      (id) => id?.toString() === userId?.toString()
+    );
+
+    console.log("user id", userId);
+    console.log("registered users", contest.registeredUsers);
+    console.log("is registered", registered);
+
+    setIsRegistered(registered);
   }, [contest, currentUser]);
 
   useEffect(() => {
@@ -28,7 +34,6 @@ const ContestRulesPage = () => {
     console.log("Contest details:", contest);
   }, [contest, currentUser]);
 
-  // Contest details and rules remain unchanged
   const DsaContestDetails = [
     {
       title: "Contest Overview",
@@ -64,55 +69,80 @@ const ContestRulesPage = () => {
     },
   ];
 
-  // Handles registration modal opening
   const handleRegisterClick = () => {
     if (!isLoggedIn) {
       console.log("User not logged in. Redirecting to login.");
       navigate("/login");
       return;
     }
-    console.log("User is logged in, showing registration modal.");
-    setShowModal(true);
+
+    if (!isRegistered) {
+      console.log("user logged in showing registration model");
+      setShowModal(true);
+    } else {
+      console.log("user registered already");
+      toast.info("You are already registered for this contest!");
+    }
   };
 
-  // Confirm registration API call
   const handleConfirmRegister = async () => {
     try {
+      const userId = currentUser.id || currentUser._id;
+
       console.log("Confirming registration for contest:", contest._id);
       await axios.post(`http://localhost:5000/api/contests/register`, {
         contestId: contest._id,
-        userId: currentUser.id,
+        userId: userId,
       });
-      console.log("Registration successful");
-      alert("Registered Successfully!");
+
+      toast.success(" Registered Successfully !");
       setShowModal(false);
-      setIsRegistered(true); // Update local registration status
-      // Optional: Navigate to contest if contest is current
-      // navigate(`/code/${contest._id}`);
+      setIsRegistered(true);
+
+      // Update local contest state to reflect registration
+      if (contest.registeredUsers) {
+        contest.registeredUsers = [...contest.registeredUsers, userId];
+      } else {
+        contest.registeredUsers = [userId];
+      }
     } catch (error) {
       console.error("Registration error:", error);
-      alert(error.response?.data?.message || "Registration failed");
+
+      if (error.response?.data?.message === "User already registered") {
+        toast.info("You are already registered for this contest!");
+        setIsRegistered(true);
+      } else {
+        toast.error(error.response?.data?.message || "Registration failed");
+      }
+
+      setShowModal(false);
     }
   };
 
-  // Unregister API call
   const handleUnregister = async () => {
     try {
+      const userId = currentUser.id || currentUser._id;
+
       console.log("Unregistering user from contest:", contest._id);
       await axios.post(`http://localhost:5000/api/contests/unregister`, {
         contestId: contest._id,
-        userId: currentUser.id,
+        userId: userId,
       });
-      console.log("Unregistration successful");
-      alert("Unregistered Successfully!");
-      setIsRegistered(false); // Update local registration status
+
+      toast.info(" Unregistered Successfully!");
+      setIsRegistered(false);
+
+      if (contest.registeredUsers) {
+        contest.registeredUsers = contest.registeredUsers.filter(
+          (id) => id.toString() !== userId.toString()
+        );
+      }
     } catch (error) {
       console.error("Unregistration error:", error);
-      alert(error.response?.data?.message || "Unregistration failed");
+      toast.error(error.response?.data?.message || "Unregistration failed");
     }
   };
 
-  // Redirect to contest page with contest id in the route
   const handleGoToContest = () => {
     navigate(`/code/${contest._id}`);
   };
@@ -162,34 +192,48 @@ const ContestRulesPage = () => {
       <br />
       <br />
 
-      {/* Conditional Button Rendering */}
-      {contest?.status === "completed" ? (
-        <p className="text-red-600 text-xl">Contest Ended</p>
-      ) : contest?.status === "current" && isRegistered ? (
-        <div className="flex gap-4">
+      {contest?.status === "current" &&
+        (isRegistered ? (
+          <div className="flex gap-4">
+            <button
+              className="bg-red-600 text-white px-4 py-2 rounded-md"
+              onClick={handleUnregister}
+            >
+              Unregister
+            </button>
+            <button
+              className="bg-blue-600 text-white px-4 py-2 rounded-md"
+              onClick={handleGoToContest}
+            >
+              Go to Contest
+            </button>
+          </div>
+        ) : (
+          <button
+            className="bg-blue-600 text-white px-4 py-2 rounded-md"
+            onClick={handleRegisterClick}
+          >
+            Register
+          </button>
+        ))}
+
+      {contest?.status === "upcoming" &&
+        (isRegistered ? (
           <button
             className="bg-red-600 text-white px-4 py-2 rounded-md"
             onClick={handleUnregister}
           >
             Unregister
           </button>
+        ) : (
           <button
             className="bg-blue-600 text-white px-4 py-2 rounded-md"
-            onClick={handleGoToContest}
+            onClick={handleRegisterClick}
           >
-            Go to Contest
+            Register
           </button>
-        </div>
-      ) : (
-        <button
-          className="bg-blue-600 text-white px-4 py-2 rounded-md"
-          onClick={handleRegisterClick}
-        >
-          Register
-        </button>
-      )}
+        ))}
 
-      {/* Problems List */}
       <div className="border border-gray-400 mt-8">
         <h1 className="bg-gray-300 py-2 px-3">Problems List</h1>
         {contest?.status === "upcoming" ? (
@@ -207,7 +251,6 @@ const ContestRulesPage = () => {
         )}
       </div>
 
-      {/* Registration Confirmation Modal */}
       {showModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-gray-500/60 bg-opacity-50">
           <div className="bg-white p-6 rounded-md">

@@ -39,7 +39,6 @@ export const useProblemData = (id, setCode) => {
       }
     } catch (err) {
       console.error("Error fetching question:", err);
-      // Instead of failing, let's try getting contest problems
       console.log("Trying to fetch as contest instead...");
       return null;
     }
@@ -72,7 +71,8 @@ export const useProblemData = (id, setCode) => {
     }
   };
 
-  // Determine which function to call based on the presence of an ID
+
+  //Determine which function to call based on the presence of an ID
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
@@ -92,9 +92,10 @@ export const useProblemData = (id, setCode) => {
     };
 
     fetchData();
-  }, [id]); // Removed selectedLang dependency to prevent infinite loops
+  }, [id]); 
 
-  // Handle language change separately
+
+  
   useEffect(() => {
     if (
       selectedProblem?.templateCode &&
