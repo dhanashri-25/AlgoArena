@@ -2,35 +2,37 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
 import {
-  Crown,
-  Award,
-  Medal,
-  User,
-  Clock,
-  CheckCircle,
   AlertTriangle,
-  Code,
-  Trophy,
   ArrowLeft,
+  CalendarClock,
+  CheckCircle,
+  Clock,
   Clock3,
-  ListChecks,
+  Code,
   FileCode2,
+  ListChecks,
   Shield,
   Tag,
-  CalendarClock,
+  Trophy,
   XCircle,
+  User,
+  Award,
 } from "lucide-react";
 import { useAuthContext } from "../Context/AuthContext";
+import { useTheme } from "../Context/ThemeContext"; // Assumes your theme hook exists
 
 const ResultPage = () => {
   const { contestId } = useParams();
   const navigate = useNavigate();
   const { isLoggedIn, data: userData } = useAuthContext();
+  const { isDarkMode } = useTheme();
+
   const [contestData, setContestData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedQuestion, setSelectedQuestion] = useState(null);
   const [questionType, setQuestionType] = useState(null); // 'solved' or 'unsolved'
+  const [selectedTab, setSelectedTab] = useState("solved"); // For the question list tabs
 
   useEffect(() => {
     const fetchResults = async () => {
@@ -38,24 +40,22 @@ const ResultPage = () => {
         setLoading(true);
         const res = await axios.get(
           `http://localhost:5000/api/contest/${contestId}/results`,
-          {
-            withCredentials: true,
-          }
+          { withCredentials: true }
         );
         console.log("Contest results data:", res.data);
         setContestData(res.data);
 
-        
+        // Default selection if solved questions exist, else unsolved if available
         if (res.data?.result?.[0]?.questionSubmissionTimes?.length > 0) {
           setSelectedQuestion(
             res.data.result[0].questionSubmissionTimes[0].questionId
           );
           setQuestionType("solved");
-        }
-        // If no solved questions, try to select an unsolved one
-        else if (res.data?.unsolvedQuestions?.length > 0) {
+          setSelectedTab("solved");
+        } else if (res.data?.unsolvedQuestions?.length > 0) {
           setSelectedQuestion(res.data.unsolvedQuestions[0]);
           setQuestionType("unsolved");
+          setSelectedTab("unsolved");
         }
       } catch (err) {
         console.error("Error fetching results:", err);
@@ -107,17 +107,20 @@ const ResultPage = () => {
     }
   };
 
-  const isQuestionSolved = (questionId) => {
-    const userContestInfo = contestData?.result?.[0] || {};
-    return userContestInfo.solvedQuestions?.some((id) => id === questionId);
-  };
-
   if (loading) {
     return (
-      <div className="min-h-screen flex justify-center items-center bg-slate-50">
+      <div
+        className={`min-h-screen flex justify-center items-center ${
+          isDarkMode ? "bg-gray-900" : "bg-slate-50"
+        }`}
+      >
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-          <div className="text-xl font-semibold text-slate-700">
+          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+          <div
+            className={`text-xl font-semibold ${
+              isDarkMode ? "text-white" : "text-slate-700"
+            }`}
+          >
             Loading contest results...
           </div>
         </div>
@@ -127,13 +130,27 @@ const ResultPage = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen flex justify-center items-center bg-slate-50">
-        <div className="bg-white rounded-lg shadow-lg p-6 max-w-md w-full">
+      <div
+        className={`min-h-screen flex justify-center items-center ${
+          isDarkMode ? "bg-gray-900" : "bg-slate-50"
+        }`}
+      >
+        <div
+          className={`${
+            isDarkMode ? "bg-gray-800" : "bg-white"
+          } rounded-lg shadow-lg p-6 max-w-md w-full`}
+        >
           <div className="flex items-center justify-center gap-3 text-red-600 mb-4">
             <AlertTriangle size={24} />
             <h2 className="text-xl font-bold">Error</h2>
           </div>
-          <p className="text-center text-slate-700">{error}</p>
+          <p
+            className={`text-center ${
+              isDarkMode ? "text-gray-300" : "text-slate-700"
+            }`}
+          >
+            {error}
+          </p>
           <button
             onClick={() => navigate(-1)}
             className="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-md flex items-center justify-center gap-2 transition-colors"
@@ -160,22 +177,40 @@ const ResultPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 px-4 py-8 md:px-8">
+    <div
+      className={`min-h-screen ${
+        isDarkMode ? "bg-gray-900" : "bg-slate-50"
+      } px-4 py-8 md:px-8`}
+    >
       <div className="max-w-7xl mx-auto">
+        {/* Navigation Header */}
         <div className="flex items-center mb-8">
           <button
             onClick={() => navigate(-1)}
-            className="mr-4 text-slate-600 hover:text-blue-600 transition-colors"
+            className={`mr-4 ${
+              isDarkMode
+                ? "text-gray-300 hover:text-blue-400"
+                : "text-slate-600 hover:text-blue-600"
+            } transition-colors`}
           >
             <ArrowLeft size={20} />
           </button>
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-800 flex items-center gap-3">
+          <h1
+            className={`text-2xl md:text-3xl font-bold flex items-center gap-3 ${
+              isDarkMode ? "text-white" : "text-slate-800"
+            }`}
+          >
             <Trophy className="text-yellow-500" size={28} />
             Contest Results
           </h1>
         </div>
 
-        <div className="bg-white rounded-xl shadow-md overflow-hidden mb-8">
+        {/* Your Performance Card */}
+        <div
+          className={`${
+            isDarkMode ? "bg-gray-800" : "bg-white"
+          } rounded-xl shadow-md overflow-hidden mb-8`}
+        >
           <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4">
             <h2 className="text-white text-xl font-semibold flex items-center gap-2">
               <User size={20} />
@@ -184,25 +219,59 @@ const ResultPage = () => {
           </div>
           <div className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="flex flex-col items-center p-4 bg-blue-50 rounded-lg">
-                <Award className="text-blue-600 mb-2" size={32} />
-                <div className="text-3xl font-bold text-slate-800">
+              <div
+                className={`flex flex-col items-center p-4 ${
+                  isDarkMode ? "bg-blue-900" : "bg-blue-50"
+                } rounded-lg`}
+              >
+                <Award
+                  className="mb-2"
+                  size={32}
+                  color={isDarkMode ? "#60a5fa" : "#2563eb"}
+                />
+                <div
+                  className={`text-3xl font-bold ${
+                    isDarkMode ? "text-white" : "text-slate-800"
+                  }`}
+                >
                   {userContestInfo.score || 0}
                 </div>
                 <div className="text-sm text-slate-600">Total Score</div>
               </div>
-
-              <div className="flex flex-col items-center p-4 bg-green-50 rounded-lg">
-                <CheckCircle className="text-green-600 mb-2" size={32} />
-                <div className="text-3xl font-bold text-slate-800">
+              <div
+                className={`flex flex-col items-center p-4 ${
+                  isDarkMode ? "bg-green-900" : "bg-green-50"
+                } rounded-lg`}
+              >
+                <CheckCircle
+                  className="mb-2"
+                  size={32}
+                  color={isDarkMode ? "#34d399" : "#16a34a"}
+                />
+                <div
+                  className={`text-3xl font-bold ${
+                    isDarkMode ? "text-white" : "text-slate-800"
+                  }`}
+                >
                   {userContestInfo.solvedQuestions?.length || 0}
                 </div>
                 <div className="text-sm text-slate-600">Problems Solved</div>
               </div>
-
-              <div className="flex flex-col items-center p-4 bg-purple-50 rounded-lg">
-                <Clock className="text-purple-600 mb-2" size={32} />
-                <div className="text-3xl font-bold text-slate-800">
+              <div
+                className={`flex flex-col items-center p-4 ${
+                  isDarkMode ? "bg-purple-900" : "bg-purple-50"
+                } rounded-lg`}
+              >
+                <Clock
+                  className="mb-2"
+                  size={32}
+                  color={isDarkMode ? "#a78bfa" : "#9333ea"}
+                />
+                <div
+                  className={`text-3xl font-bold ${
+                    isDarkMode ? "text-white" : "text-slate-800"
+                  }`}
+                >
                   {userContestInfo.totalTime || "0"}
                 </div>
                 <div className="text-sm text-slate-600">
@@ -210,16 +279,18 @@ const ResultPage = () => {
                 </div>
               </div>
             </div>
-
             <div className="mt-6 border-t border-slate-200 pt-4">
-              <div className="flex flex-wrap gap-2 text-sm text-slate-700">
-                <div className="flex items-center gap-1">
+              <div className="flex flex-wrap gap-2 text-sm">
+                <div
+                  className={`flex items-center gap-1 ${
+                    isDarkMode ? "text-gray-300" : "text-slate-700"
+                  }`}
+                >
                   <CalendarClock size={16} className="text-slate-500" />
                   <span>Contest Start: {formatTime(contestStartTime)}</span>
                 </div>
-
-                <div className="flex items-center gap-1 ml-auto">
-                  <Shield size={16} className="text-slate-500" />
+                <div className="flex items-center gap-1 ml-auto text-slate-500">
+                  <Shield size={16} />
                   <span>Contest ID: {userContestInfo.contest}</span>
                 </div>
               </div>
@@ -227,100 +298,114 @@ const ResultPage = () => {
           </div>
         </div>
 
+        {/* Questions Section */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="bg-white rounded-xl shadow-md overflow-hidden">
-            <div className="bg-slate-800 px-6 py-4">
+          {/* Tabs & List */}
+          <div
+            className={`${
+              isDarkMode ? "bg-gray-800" : "bg-white"
+            } rounded-xl shadow-md overflow-hidden`}
+          >
+            <div
+              className={`px-6 py-4 ${
+                isDarkMode ? "bg-gray-700" : "bg-slate-800"
+              }`}
+            >
               <h2 className="text-white text-lg font-semibold flex items-center gap-2">
                 <ListChecks size={20} />
                 Contest Questions
               </h2>
             </div>
 
-            {/* Questions Tabs */}
+            {/* Tabs */}
             <div className="flex border-b border-slate-200">
               <button
-                onClick={() => {}}
+                onClick={() => setSelectedTab("solved")}
                 className={`flex-1 py-3 px-4 text-center font-medium transition-colors ${
-                  solvedQuestionsInfo.length > 0
+                  selectedTab === "solved"
                     ? "text-blue-600 border-b-2 border-blue-600"
-                    : "text-slate-600"
+                    : isDarkMode
+                    ? "text-gray-300 hover:text-white"
+                    : "text-slate-600 hover:text-slate-800"
                 }`}
               >
                 Solved ({solvedQuestionsInfo.length})
               </button>
               <button
-                onClick={() => {}}
+                onClick={() => setSelectedTab("unsolved")}
                 className={`flex-1 py-3 px-4 text-center font-medium transition-colors ${
-                  unsolvedQuestionsInfo.length > 0
-                    ? "text-slate-600"
-                    : "text-slate-600"
+                  selectedTab === "unsolved"
+                    ? "text-blue-600 border-b-2 border-blue-600"
+                    : isDarkMode
+                    ? "text-gray-300 hover:text-white"
+                    : "text-slate-600 hover:text-slate-800"
                 }`}
               >
                 Unsolved ({unsolvedQuestionsInfo.length})
               </button>
             </div>
 
-            {/* Solved Questions List */}
+            {/* Conditionally Render the List Based on the Selected Tab */}
             <div className="p-2">
-              {solvedQuestionsInfo.length > 0 ? (
-                <div className="space-y-2">
-                  {solvedQuestionsInfo.map((question, idx) => (
-                    <button
-                      key={question.questionId._id}
-                      onClick={() => {
-                        setSelectedQuestion(question.questionId);
-                        setQuestionType("solved");
-                      }}
-                      className={`w-full text-left p-4 rounded-lg transition-colors ${
-                        selectedQuestion?._id === question.questionId._id &&
-                        questionType === "solved"
-                          ? "bg-blue-50 border-l-4 border-blue-600"
-                          : "hover:bg-slate-50 border-l-4 border-transparent"
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="bg-slate-800 text-white w-8 h-8 rounded-full flex items-center justify-center font-medium">
-                          {question.questionId.quesNo || idx + 1}
+              {selectedTab === "solved" ? (
+                solvedQuestionsInfo.length > 0 ? (
+                  <div className="space-y-2">
+                    {solvedQuestionsInfo.map((question, idx) => (
+                      <button
+                        key={question.questionId._id}
+                        onClick={() => {
+                          setSelectedQuestion(question.questionId);
+                          setQuestionType("solved");
+                        }}
+                        className={`w-full text-left p-4 rounded-lg transition-colors ${
+                          selectedQuestion?._id === question.questionId._id &&
+                          questionType === "solved"
+                            ? "bg-blue-50 border-l-4 border-blue-600"
+                            : isDarkMode
+                            ? "hover:bg-gray-700 border-l-4 border-transparent"
+                            : "hover:bg-slate-50 border-l-4 border-transparent"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <div
+                            className={`w-8 h-8 rounded-full flex items-center justify-center font-medium ${
+                              isDarkMode
+                                ? "bg-slate-600 text-white"
+                                : "bg-slate-800 text-white"
+                            }`}
+                          >
+                            {question.questionId.quesNo || idx + 1}
+                          </div>
+                          <div className="flex-1 truncate text-sm font-medium">
+                            {question.questionId.title}
+                          </div>
+                          <div
+                            className={`text-xs px-2 py-1 rounded-full font-medium ${getDifficultyColor(
+                              question.questionId.difficulty
+                            )}`}
+                          >
+                            {question.questionId.difficulty}
+                          </div>
                         </div>
-                        <div className="flex-1 truncate">
-                          {question.questionId.title}
+                        <div className="mt-2 flex items-center text-xs">
+                          <div className="flex items-center gap-1">
+                            <Trophy size={14} />
+                            <span>{question.questionId.points} pts</span>
+                          </div>
+                          <div className="ml-auto flex items-center gap-1 text-green-600">
+                            <CheckCircle size={14} />
+                            <span>Solved</span>
+                          </div>
                         </div>
-                        <div
-                          className={`text-xs px-2 py-1 rounded-full font-medium ${getDifficultyColor(
-                            question.questionId.difficulty
-                          )}`}
-                        >
-                          {question.questionId.difficulty}
-                        </div>
-                      </div>
-
-                      <div className="mt-2 flex items-center text-xs text-slate-600">
-                        <div className="flex items-center gap-1">
-                          <Trophy size={14} />
-                          <span>{question.questionId.points} pts</span>
-                        </div>
-
-                        <div className="ml-auto flex items-center gap-1 text-green-600">
-                          <CheckCircle size={14} />
-                          <span>Solved</span>
-                        </div>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div className="py-6 text-center text-slate-500">
-                  No solved questions
-                </div>
-              )}
-            </div>
-
-            {/* Unsolved Questions List */}
-            <div className="p-2 mt-2">
-              <h3 className="text-md font-medium text-slate-700 mb-2 px-4">
-                Unsolved Questions
-              </h3>
-              {unsolvedQuestionsInfo.length > 0 ? (
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="py-6 text-center text-slate-500">
+                    No solved questions
+                  </div>
+                )
+              ) : unsolvedQuestionsInfo.length > 0 ? (
                 <div className="space-y-2">
                   {unsolvedQuestionsInfo.map((question, idx) => (
                     <button
@@ -333,14 +418,24 @@ const ResultPage = () => {
                         selectedQuestion?._id === question._id &&
                         questionType === "unsolved"
                           ? "bg-blue-50 border-l-4 border-blue-600"
+                          : isDarkMode
+                          ? "hover:bg-gray-700 border-l-4 border-transparent"
                           : "hover:bg-slate-50 border-l-4 border-transparent"
                       }`}
                     >
                       <div className="flex items-center gap-2">
-                        <div className="bg-slate-800 text-white w-8 h-8 rounded-full flex items-center justify-center font-medium">
+                        <div
+                          className={`w-8 h-8 rounded-full flex items-center justify-center font-medium ${
+                            isDarkMode
+                              ? "bg-slate-600 text-white"
+                              : "bg-slate-800 text-white"
+                          }`}
+                        >
                           {question.quesNo || idx + 1}
                         </div>
-                        <div className="flex-1 truncate">{question.title}</div>
+                        <div className="flex-1 truncate text-sm font-medium">
+                          {question.title}
+                        </div>
                         <div
                           className={`text-xs px-2 py-1 rounded-full font-medium ${getDifficultyColor(
                             question.difficulty
@@ -349,13 +444,11 @@ const ResultPage = () => {
                           {question.difficulty}
                         </div>
                       </div>
-
-                      <div className="mt-2 flex items-center text-xs text-slate-600">
+                      <div className="mt-2 flex items-center text-xs">
                         <div className="flex items-center gap-1">
                           <Trophy size={14} />
                           <span>{question.points} pts</span>
                         </div>
-
                         <div className="ml-auto flex items-center gap-1 text-red-500">
                           <XCircle size={14} />
                           <span>Not Solved</span>
@@ -372,13 +465,22 @@ const ResultPage = () => {
             </div>
           </div>
 
+          {/* Question Details */}
           <div className="lg:col-span-2">
             {selectedQuestion ? (
-              <div className="bg-white rounded-xl shadow-md overflow-hidden">
+              <div
+                className={`${
+                  isDarkMode ? "bg-gray-800" : "bg-white"
+                } rounded-xl shadow-md overflow-hidden`}
+              >
                 <div
                   className={`px-6 py-4 ${
                     questionType === "solved"
-                      ? "bg-gradient-to-r from-green-600 to-green-700"
+                      ? isDarkMode
+                        ? "bg-gradient-to-r from-green-700 to-green-900"
+                        : "bg-gradient-to-r from-green-600 to-green-700"
+                      : isDarkMode
+                      ? "bg-gradient-to-r from-gray-700 to-gray-900"
                       : "bg-gradient-to-r from-slate-700 to-slate-800"
                   }`}
                 >
@@ -396,35 +498,57 @@ const ResultPage = () => {
                     </div>
                   </h2>
                 </div>
-
                 <div className="p-6">
                   <div className="mb-6">
-                    <h3 className="text-lg font-semibold text-slate-800 mb-3">
+                    <h3
+                      className={`text-lg font-semibold mb-3 ${
+                        isDarkMode ? "text-white" : "text-slate-800"
+                      }`}
+                    >
                       Problem
                     </h3>
-                    <div className="prose prose-slate max-w-none">
-                      <p>{selectedQuestion.description}</p>
+                    <div className="prose max-w-none">
+                      <p
+                        className={
+                          isDarkMode ? "text-gray-300" : "text-slate-700"
+                        }
+                      >
+                        {selectedQuestion.description}
+                      </p>
                     </div>
                   </div>
-
                   {selectedQuestion.constraints && (
                     <div className="mb-6">
-                      <h3 className="text-lg font-semibold text-slate-800 mb-3 flex items-center gap-2">
+                      <h3
+                        className={`text-lg font-semibold mb-3 flex items-center gap-2 ${
+                          isDarkMode ? "text-white" : "text-slate-800"
+                        }`}
+                      >
                         <Shield size={18} />
                         Constraints
                       </h3>
-                      <ul className="list-disc pl-5 space-y-1 text-slate-700">
+                      <ul className="list-disc pl-5 space-y-1">
                         {selectedQuestion.constraints.map((constraint, idx) => (
-                          <li key={idx}>{constraint}</li>
+                          <li
+                            key={idx}
+                            className={
+                              isDarkMode ? "text-gray-300" : "text-slate-700"
+                            }
+                          >
+                            {constraint}
+                          </li>
                         ))}
                       </ul>
                     </div>
                   )}
-
                   {selectedQuestion.tags &&
                     selectedQuestion.tags.length > 0 && (
                       <div className="mb-6">
-                        <h3 className="text-lg font-semibold text-slate-800 mb-3 flex items-center gap-2">
+                        <h3
+                          className={`text-lg font-semibold mb-3 flex items-center gap-2 ${
+                            isDarkMode ? "text-white" : "text-slate-800"
+                          }`}
+                        >
                           <Tag size={18} />
                           Tags
                         </h3>
@@ -432,7 +556,11 @@ const ResultPage = () => {
                           {selectedQuestion.tags.map((tag, idx) => (
                             <span
                               key={idx}
-                              className="bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-sm"
+                              className={`px-3 py-1 rounded-full text-sm ${
+                                isDarkMode
+                                  ? "bg-gray-700 text-gray-300"
+                                  : "bg-slate-100 text-slate-700"
+                              }`}
                             >
                               {tag}
                             </span>
@@ -440,24 +568,48 @@ const ResultPage = () => {
                         </div>
                       </div>
                     )}
-
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                    <div className="bg-blue-50 rounded-lg p-4">
-                      <div className="text-sm text-slate-600">Points</div>
-                      <div className="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                    <div
+                      className={`rounded-lg p-4 ${
+                        isDarkMode ? "bg-gray-700" : "bg-blue-50"
+                      }`}
+                    >
+                      <div
+                        className={`text-sm ${
+                          isDarkMode ? "text-gray-300" : "text-slate-600"
+                        }`}
+                      >
+                        Points
+                      </div>
+                      <div
+                        className={`text-2xl font-bold flex items-center gap-2 ${
+                          isDarkMode ? "text-white" : "text-slate-800"
+                        }`}
+                      >
                         <Trophy size={20} className="text-yellow-500" />
                         {questionType === "solved"
                           ? selectedQuestion.points
                           : "0"}
                       </div>
                     </div>
-
                     <div
                       className={`rounded-lg p-4 ${
-                        questionType === "solved" ? "bg-green-50" : "bg-red-50"
+                        questionType === "solved"
+                          ? isDarkMode
+                            ? "bg-green-700"
+                            : "bg-green-50"
+                          : isDarkMode
+                          ? "bg-red-700"
+                          : "bg-red-50"
                       }`}
                     >
-                      <div className="text-sm text-slate-600">Status</div>
+                      <div
+                        className={`text-sm ${
+                          isDarkMode ? "text-gray-300" : "text-slate-600"
+                        }`}
+                      >
+                        Status
+                      </div>
                       <div
                         className={`text-2xl font-bold flex items-center gap-2 ${
                           questionType === "solved"
@@ -479,19 +631,34 @@ const ResultPage = () => {
                       </div>
                     </div>
                   </div>
-
                   <div className="border-t border-slate-200 pt-6">
-                    <h3 className="text-lg font-semibold text-slate-800 mb-3 flex items-center gap-2">
+                    <h3
+                      className={`text-lg font-semibold mb-3 flex items-center gap-2 ${
+                        isDarkMode ? "text-white" : "text-slate-800"
+                      }`}
+                    >
                       <Clock3 size={18} />
                       Timing Information
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {questionType === "solved" ? (
-                        <div className="bg-slate-50 rounded-lg p-4">
-                          <div className="text-sm text-slate-600">
+                        <div
+                          className={`rounded-lg p-4 ${
+                            isDarkMode ? "bg-gray-700" : "bg-slate-50"
+                          }`}
+                        >
+                          <div
+                            className={`text-sm ${
+                              isDarkMode ? "text-gray-300" : "text-slate-600"
+                            }`}
+                          >
                             Time to Solve
                           </div>
-                          <div className="text-xl font-semibold text-slate-800">
+                          <div
+                            className={`text-xl font-semibold ${
+                              isDarkMode ? "text-white" : "text-slate-800"
+                            }`}
+                          >
                             {calculateTimeTaken(
                               contestStartTime,
                               getSubmissionTime(selectedQuestion._id)
@@ -499,25 +666,45 @@ const ResultPage = () => {
                           </div>
                         </div>
                       ) : (
-                        <div className="bg-slate-50 rounded-lg p-4">
-                          <div className="text-sm text-slate-600">Status</div>
+                        <div
+                          className={`rounded-lg p-4 ${
+                            isDarkMode ? "bg-gray-700" : "bg-slate-50"
+                          }`}
+                        >
+                          <div
+                            className={`text-sm ${
+                              isDarkMode ? "text-gray-300" : "text-slate-600"
+                            }`}
+                          >
+                            Status
+                          </div>
                           <div className="text-xl font-semibold text-red-500">
                             Not Attempted
                           </div>
                         </div>
                       )}
-
-                      <div className="bg-slate-50 rounded-lg p-4">
-                        <div className="text-sm text-slate-600">
+                      <div
+                        className={`rounded-lg p-4 ${
+                          isDarkMode ? "bg-gray-700" : "bg-slate-50"
+                        }`}
+                      >
+                        <div
+                          className={`text-sm ${
+                            isDarkMode ? "text-gray-300" : "text-slate-600"
+                          }`}
+                        >
                           Contest Start Time
                         </div>
-                        <div className="text-xl font-semibold text-slate-800">
+                        <div
+                          className={`text-xl font-semibold ${
+                            isDarkMode ? "text-white" : "text-slate-800"
+                          }`}
+                        >
                           {formatTime(contestStartTime)}
                         </div>
                       </div>
                     </div>
                   </div>
-
                   {questionType === "unsolved" && (
                     <div className="mt-6 flex justify-center">
                       <button
@@ -536,7 +723,13 @@ const ResultPage = () => {
                 </div>
               </div>
             ) : (
-              <div className="bg-white rounded-xl shadow-md p-8 flex flex-col items-center justify-center min-h-[400px] text-slate-500">
+              <div
+                className={`${
+                  isDarkMode ? "bg-gray-800" : "bg-white"
+                } rounded-xl shadow-md p-8 flex flex-col items-center justify-center min-h-[400px] ${
+                  isDarkMode ? "text-gray-300" : "text-slate-500"
+                }`}
+              >
                 <FileCode2 size={48} className="mb-4 opacity-30" />
                 <p>Select a question to view details</p>
               </div>

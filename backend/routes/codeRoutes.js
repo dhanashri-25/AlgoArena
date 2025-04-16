@@ -1,7 +1,7 @@
 // routes/codeRoutes.js
 import express from "express";
 import axios from "axios";
-import { ContestResult } from "../models/User.js"; // Ensure this file exports the updated ContestResult model
+import { ContestResult, User, Question, Contest } from "../models/User.js"; // Ensure this file exports the updated ContestResult model
 import { middle } from "../middleware.js";
 
 const router = express.Router();
@@ -113,6 +113,15 @@ router.post("/submit-code", middle, async (req, res) => {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
+    //contest still active or not
+    const contest = await Contest.findById(contestId);
+    if (!contest || contest.status !== "current") {
+      console.log("contest not active");
+      return res.status(403).json({
+        message: "Submissions are disabled. This contest is not active.",
+      });
+    }
+
     //it finds in db ki koi user ne ye contest submit kia hai ki nhi
     let contestResult = await ContestResult.findOne({
       user: userId,
@@ -132,6 +141,7 @@ router.post("/submit-code", middle, async (req, res) => {
         questionSubmissionTimes: [],
         startTime: today,
       });
+      console.log("default contest formed after clicking on submit");
     }
 
     await contestResult.save(); //saving new contest result to db
@@ -238,6 +248,21 @@ router.post("/submit-code", middle, async (req, res) => {
         score: contestResult.score,
       });
     }
+
+    //updating userschema
+    const user = await User.findById(userId);
+    user.contestHistory.push(contestResult._id);
+    user.contestsParticipated.push(contestId);
+    user.problemSolved.push(problemId);
+
+    const question = await Question.findById({ _id: problemId });
+    question.solvedBy.push(userId);
+
+    await user.save();
+    await question.save();
+
+    console.log("updated user........", user);
+    console.log("updated question .......", question);
 
     res.json({
       message: "Accepted",

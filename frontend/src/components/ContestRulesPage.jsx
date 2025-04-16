@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { useLocation, Link, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useAuthContext } from "../Context/AuthContext";
+import { useTheme } from "../Context/ThemeContext";
 import { toast } from "react-toastify";
 
 const ContestRulesPage = () => {
@@ -9,29 +10,18 @@ const ContestRulesPage = () => {
   const contest = location.state?.contest;
   const navigate = useNavigate();
   const { data: currentUser, isLoggedIn } = useAuthContext();
+  const { isDarkMode } = useTheme();
 
   const [isRegistered, setIsRegistered] = useState(false);
   const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     if (!contest || !currentUser) return;
-
     const userId = currentUser.id || currentUser._id;
-
     const registered = contest.registeredUsers?.some(
       (id) => id?.toString() === userId?.toString()
     );
-
-    console.log("user id", userId);
-    console.log("registered users", contest.registeredUsers);
-    console.log("is registered", registered);
-
     setIsRegistered(registered);
-  }, [contest, currentUser]);
-
-  useEffect(() => {
-    console.log("Current user:", currentUser);
-    console.log("Contest details:", contest);
   }, [contest, currentUser]);
 
   const DsaContestDetails = [
@@ -46,11 +36,12 @@ const ContestRulesPage = () => {
         "Open to all developers and students aged 16+. Individual participation only - team entries are not allowed. Basic programming knowledge and familiarity with any programming language is required.",
     },
   ];
+
   const rules = [
     {
       title: "Competition Rules",
       content: [
-        "Code copy /pasting disabled once contest starts - original solutions only",
+        "Code copy/pasting disabled once contest starts - original solutions only",
         "Auto Submission on disabling camera",
         "Tab switching limit: Maximum 3 times before automatic submission",
         "Scoring: Points based on problem difficulty and submission time",
@@ -59,6 +50,7 @@ const ContestRulesPage = () => {
       ],
     },
   ];
+
   const score = [
     {
       title: "Scoring & Ranking",
@@ -71,16 +63,12 @@ const ContestRulesPage = () => {
 
   const handleRegisterClick = () => {
     if (!isLoggedIn) {
-      console.log("User not logged in. Redirecting to login.");
       navigate("/login");
       return;
     }
-
     if (!isRegistered) {
-      console.log("user logged in showing registration model");
       setShowModal(true);
     } else {
-      console.log("user registered already");
       toast.info("You are already registered for this contest!");
     }
   };
@@ -88,33 +76,23 @@ const ContestRulesPage = () => {
   const handleConfirmRegister = async () => {
     try {
       const userId = currentUser.id || currentUser._id;
-
-      console.log("Confirming registration for contest:", contest._id);
       await axios.post(`http://localhost:5000/api/contests/register`, {
         contestId: contest._id,
         userId: userId,
       });
-
-      toast.success(" Registered Successfully !");
+      toast.success("Registered Successfully!");
       setShowModal(false);
       setIsRegistered(true);
-
-      // Update local contest state to reflect registration
-      if (contest.registeredUsers) {
-        contest.registeredUsers = [...contest.registeredUsers, userId];
-      } else {
-        contest.registeredUsers = [userId];
-      }
+      contest.registeredUsers = contest.registeredUsers
+        ? [...contest.registeredUsers, userId]
+        : [userId];
     } catch (error) {
-      console.error("Registration error:", error);
-
       if (error.response?.data?.message === "User already registered") {
         toast.info("You are already registered for this contest!");
         setIsRegistered(true);
       } else {
         toast.error(error.response?.data?.message || "Registration failed");
       }
-
       setShowModal(false);
     }
   };
@@ -122,23 +100,16 @@ const ContestRulesPage = () => {
   const handleUnregister = async () => {
     try {
       const userId = currentUser.id || currentUser._id;
-
-      console.log("Unregistering user from contest:", contest._id);
       await axios.post(`http://localhost:5000/api/contests/unregister`, {
         contestId: contest._id,
         userId: userId,
       });
-
-      toast.info(" Unregistered Successfully!");
+      toast.info("Unregistered Successfully!");
       setIsRegistered(false);
-
-      if (contest.registeredUsers) {
-        contest.registeredUsers = contest.registeredUsers.filter(
-          (id) => id.toString() !== userId.toString()
-        );
-      }
+      contest.registeredUsers = contest.registeredUsers.filter(
+        (id) => id.toString() !== userId.toString()
+      );
     } catch (error) {
-      console.error("Unregistration error:", error);
       toast.error(error.response?.data?.message || "Unregistration failed");
     }
   };
@@ -147,27 +118,43 @@ const ContestRulesPage = () => {
     navigate(`/code/${contest._id}`);
   };
 
+  const themeStyles = {
+    container: isDarkMode
+      ? "bg-gray-900 text-white min-h-screen p-25"
+      : "bg-[#E8F1FF] text-black min-h-screen p-25",
+    card: isDarkMode
+      ? "bg-gray-800 border-l-4 border-blue-400 text-white"
+      : "bg-white border-l-4 border-blue-300 text-black",
+    sectionHeading: "text-3xl font-semibold my-4",
+    ruleList: isDarkMode ? "bg-gray-700" : "bg-blue-50",
+    buttonPrimary: "bg-blue-600 text-white px-4 py-2 rounded-md",
+    buttonDanger: "bg-red-600 text-white px-4 py-2 rounded-md",
+    buttonNeutral: "bg-gray-400 text-white px-4 py-2 rounded-md",
+  };
+
   return (
-    <div className="bg-[#E8F1FF] flex min-h-screen flex-col p-20">
-      <h1 className="text-5xl font-semibold py-5 mb-5">
-        DSA Coding Challenge 2024 - Rules & Guidelines
+    <div className={themeStyles.container } >
+      <h1 className="text-5xl font-bold mb-15">
+        DSA Coding Challenge  - Rules & Guidelines
       </h1>
 
       {DsaContestDetails.map((detail, index) => (
         <div
           key={index}
-          className="bg-white p-8 my-4 rounded-lg border-l-4 border-blue-300"
+          className={`p-6 my-4 rounded-lg shadow-sm ${themeStyles.card}`}
         >
-          <h2 className="text-3xl my-2">{detail.title}</h2>
+          <h2 className="text-2xl font-semibold mb-2">{detail.title}</h2>
           <p>{detail.content}</p>
         </div>
       ))}
 
-      {rules.map((detail, index) => (
-        <div key={index} className="my-2 flex gap-2 flex-col">
-          <h1 className="text-3xl">{detail.title}</h1>
-          <ul className="list-disc pl-6 bg-blue-50 my-4 rounded-lg">
-            {detail.content.map((point, i) => (
+      {rules.map((section, index) => (
+        <div key={index} className="my-4">
+          <h2 className={themeStyles.sectionHeading}>{section.title}</h2>
+          <ul
+            className={`list-disc pl-6 p-4 rounded-lg ${themeStyles.ruleList}`}
+          >
+            {section.content.map((point, i) => (
               <li key={i} className="my-2">
                 {point}
               </li>
@@ -176,11 +163,13 @@ const ContestRulesPage = () => {
         </div>
       ))}
 
-      {score.map((detail, index) => (
+      {score.map((section, index) => (
         <div key={index}>
-          <h1 className="text-3xl">{detail.title}</h1>
-          <ul className="list-disc pl-6 bg-blue-50 my-4 rounded-lg">
-            {detail.content.map((point, i) => (
+          <h2 className={themeStyles.sectionHeading}>{section.title}</h2>
+          <ul
+            className={`list-disc pl-6 p-4 rounded-lg ${themeStyles.ruleList}`}
+          >
+            {section.content.map((point, i) => (
               <li key={i} className="my-2">
                 {point}
               </li>
@@ -189,71 +178,83 @@ const ContestRulesPage = () => {
         </div>
       ))}
 
-      <br />
-      <br />
-
-      {contest?.status === "current" &&
-        (isRegistered ? (
+      <div className="my-8">
+        {contest?.status === "current" && (
           <div className="flex gap-4">
-            <button
-              className="bg-red-600 text-white px-4 py-2 rounded-md"
-              onClick={handleUnregister}
-            >
-              Unregister
-            </button>
-            <button
-              className="bg-blue-600 text-white px-4 py-2 rounded-md"
-              onClick={handleGoToContest}
-            >
-              Go to Contest
-            </button>
+            {isRegistered ? (
+              <>
+                <button
+                  className={themeStyles.buttonDanger}
+                  onClick={handleUnregister}
+                >
+                  Unregister
+                </button>
+                <button
+                  className={themeStyles.buttonPrimary}
+                  onClick={handleGoToContest}
+                >
+                  Go to Contest
+                </button>
+              </>
+            ) : (
+              <button
+                className={themeStyles.buttonPrimary}
+                onClick={handleRegisterClick}
+              >
+                Register
+              </button>
+            )}
           </div>
-        ) : (
-          <button
-            className="bg-blue-600 text-white px-4 py-2 rounded-md"
-            onClick={handleRegisterClick}
-          >
-            Register
-          </button>
-        ))}
+        )}
 
-      {contest?.status === "upcoming" &&
-        (isRegistered ? (
-          <button
-            className="bg-red-600 text-white px-4 py-2 rounded-md"
-            onClick={handleUnregister}
-          >
-            Unregister
-          </button>
-        ) : (
-          <button
-            className="bg-blue-600 text-white px-4 py-2 rounded-md"
-            onClick={handleRegisterClick}
-          >
-            Register
-          </button>
-        ))}
+        {contest?.status === "upcoming" && (
+          <>
+            {isRegistered ? (
+              <button
+                className={themeStyles.buttonDanger}
+                onClick={handleUnregister}
+              >
+                Unregister
+              </button>
+            ) : (
+              <button
+                className={themeStyles.buttonPrimary}
+                onClick={handleRegisterClick}
+              >
+                Register
+              </button>
+            )}
+          </>
+        )}
+      </div>
 
-      <div className="border border-gray-400 mt-8">
-        <h1 className="bg-gray-300 py-2 px-3">Problems List</h1>
+      <div className="border border-gray-400 mt-8 rounded-md">
+        <h2
+          className={`${
+            isDarkMode ? "bg-gray-700" : "bg-gray-300"
+          } py-2 px-4 font-semibold`}
+        >
+          Problems List
+        </h2>
+        
         {contest?.status === "upcoming" ? (
-          <p className="p-3">Contest will start soon.</p>
-        ) : contest?.questions && contest.questions.length > 0 ? (
-          <ul className="rounded-lg">
-            {contest.questions.map((question, i) => (
-              <li key={i} className="my-2 px-3 py-2">
+          <p className="p-4">Contest will start soon.</p>
+        ) : contest?.questions?.length > 0 ? (
+          <ul className="p-4">
+            {contest.questions.map((question, index) => (
+              <li key={index} className="my-2 p-2">
                 {question.title || question}
               </li>
             ))}
           </ul>
         ) : (
-          <p className="p-3">No problems available.</p>
+          <p className="p-4">No problems available.</p>
         )}
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 flex items-center justify-center bg-gray-500/60 bg-opacity-50">
-          <div className="bg-white p-6 rounded-md">
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg max-w-md w-full">
             <h2 className="text-xl font-bold mb-4">
               Are you sure you want to register?
             </h2>
@@ -261,7 +262,7 @@ const ContestRulesPage = () => {
               If you know you won't be able to attend, be sure to unregister so
               your contest rating won't be negatively affected.
             </p>
-            <div className="flex justify-end space-x-4">
+            <div className="flex justify-end gap-4">
               <button
                 onClick={handleConfirmRegister}
                 className="bg-green-600 text-white px-4 py-2 rounded-md"
@@ -270,7 +271,7 @@ const ContestRulesPage = () => {
               </button>
               <button
                 onClick={() => setShowModal(false)}
-                className="bg-gray-400 text-white px-4 py-2 rounded-md"
+                className={themeStyles.buttonNeutral}
               >
                 Cancel
               </button>

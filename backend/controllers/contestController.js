@@ -1,4 +1,4 @@
-import { User, Contest, Question } from "../models/User.js";
+import { User, Contest, Question, ContestResult } from "../models/User.js";
 
 // GET /current-contest
 export const getCurrentContest = async (req, res) => {
@@ -75,6 +75,29 @@ export const registerForContest = async (req, res) => {
     contest.registeredUsers = contest.registeredUsers || [];
     contest.registeredUsers.push(userId);
     await contest.save();
+
+    const today = new Date();
+    today.setHours(8, 0, 0, 0);
+
+    let contestResult = await ContestResult.findOne({
+      user: userId,
+      contest: contestId,
+    });
+
+    if (!contestResult) {
+      contestResult = new ContestResult({
+        user: userId,
+        contest: contestId,
+        score: 0,
+        totalTime: 0,
+        solvedQuestions: [],
+        questionSubmissionTimes: [],
+        startTime: today,
+      });
+
+      await contestResult.save();
+      console.log("contest defaul saved after registration");
+    }
 
     res.json({ message: "Registered successfully!" });
   } catch (error) {

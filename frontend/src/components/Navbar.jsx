@@ -14,9 +14,9 @@ const Navbar = () => {
     <div
       className={`
         sticky top-0 z-50 shadow-md
-        ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-800'}
+        ${isDarkMode ? 'bg-gray-950 text-white' : 'bg-white text-gray-800'}
         flex items-center justify-between
-        py-4 px-6 sm:px-10 lg:px-16
+        py-7 px-6 sm:px-10 lg:px-16
       `}
     >
       <div className="flex items-center gap-8">

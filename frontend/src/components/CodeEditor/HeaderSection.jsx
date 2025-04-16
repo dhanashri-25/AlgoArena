@@ -9,7 +9,9 @@ import {
   User,
   Flag,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+import MyUserMenu from "../MyUserMenu";
+import { useAuthContext } from "../../Context/AuthContext";
 
 const HeaderSection = ({
   isDarkMode,
@@ -41,6 +43,8 @@ const HeaderSection = ({
     setShowConfirmModal(false);
   };
 
+  const { data } = useAuthContext();
+  const id = data?._id;
   return (
     <>
       <div
@@ -107,12 +111,15 @@ const HeaderSection = ({
             <></>
           )}
         </div>
-        <div className="cursor-pointer hover:text-gray-400">
+
+        <div
+          className="cursor-pointer hover:text-gray-400"
+          onClick={() => navigate(`/profile/${id}`)}
+        >
           <User size={24} />
         </div>
       </div>
 
-      {/* Custom Modal Component */}
       {showConfirmModal && (
         <ConfirmModal
           isDarkMode={isDarkMode}

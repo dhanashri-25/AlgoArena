@@ -1,4 +1,3 @@
-// Code.jsx - Main component with finalized contest submission logic
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Split from "react-split";
@@ -68,6 +67,7 @@ const Code = () => {
   } = useProblemData(id, setCode);
 
   const isContestMode = randomProblems && randomProblems.length > 0;
+
   //will return true---> if we are in compete page i.e for contest else false
 
   const [problemsVisible, setProblemsVisible] = useState(false);
@@ -97,30 +97,6 @@ const Code = () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [switchCount]);
-
-  // // Timer to auto-submit when contest time is up
-  // useEffect(() => {
-  //   // This would typically be implemented with server-side time validation
-  //   // Here's a simple client-side example
-  //   const checkContestStatus = async () => {
-  //     try {
-  //       const response = await axios.get(`/api/contests/${id}/status`);
-  //       if (response.data.status === "completed") {
-  //         handleFinalSubmit();
-  //       }
-  //     } catch (error) {
-  //       console.error("Error checking contest status:", error);
-  //     }
-  //   };
-
-  //   // Check every minute
-  //   const intervalId = setInterval(checkContestStatus, 60000);
-
-  //   // Initial check
-  //   checkContestStatus();
-
-  //   return () => clearInterval(intervalId);
-  // }, [id]);
 
   if (isLoading) return <p>Loading...</p>;
   if (error) return <p>Error: {error}</p>;
@@ -158,64 +134,86 @@ const Code = () => {
       />
 
       <Split
-        className="flex h-[calc(100vh-70px)]"
+        className="flex h-[calc(100vh-70px)] [&>*]:overflow-hidden scrollbar-hide"
         sizes={[40, 60]}
         minSize={300}
         gutterSize={8}
         gutterAlign="center"
         snapOffset={30}
       >
-        {problemsVisible ? (
-          <ProblemList
-            randomProblems={randomProblems}
-            setCode={setCode}
-            selectedLang={selectedLang}
-            selectedProblem={selectedProblem}
-            setSelectedProblem={setSelectedProblem}
-            setProblemsVisible={setProblemsVisible}
-            isDarkMode={isDarkMode}
-          />
-        ) : (
-          <ProblemDetails
-            selectedProblem={selectedProblem}
-            isDarkMode={isDarkMode}
-            setProblemsVisible={setProblemsVisible}
-            buttonClass={buttonClass}
-            sidebarClass={sidebarClass}
-          />
-        )}
-
-        <Split
-          className="flex flex-col w-full h-full"
-          sizes={[70, 30]}
-          minSize={100}
-          gutterSize={8}
-          direction="vertical"
-          gutterAlign="center"
-          snapOffset={30}
-        >
-          <EditorSection
-            selectedLang={selectedLang}
-            setSelectedLang={setSelectedLang}
-            code={code}
-            setCode={setCode}
-            isDarkMode={isDarkMode}
-            selectClass={selectClass}
-            editorClass={editorClass}
-            selectedProblem={selectedProblem}
-            languages={LANGUAGES}
-          />
-          <OutputSection
-            isDarkMode={isDarkMode}
-            selectedProblem={selectedProblem}
-            correct={correct}
-            outputClass={outputClass}
-            output={output}
-            testCases={testCases}
-            isRunning={isRunning}
-            contestScore={contestScore}
-          />
-        </Split>
+        <div className="w-full h-full relative">
+          {/* Problem List */}
+          <div
+            style={{
+              transition: "opacity 0.3s ease",
+              opacity: problemsVisible ? 1 : 0,
+              pointerEvents: problemsVisible ? "auto" : "none",
+            }}
+            className="absolute inset-0"
+          >
+            <ProblemList
+              randomProblems={randomProblems}
+              setCode={setCode}
+              selectedLang={selectedLang}
+              selectedProblem={selectedProblem}
+              setSelectedProblem={setSelectedProblem}
+              setProblemsVisible={setProblemsVisible}
+              isDarkMode={isDarkMode}
+            />
+          </div>
+          
+          <div
+            style={{
+              transition: "opacity 0.3s ease",
+              opacity: !problemsVisible ? 1 : 0,
+              pointerEvents: !problemsVisible ? "auto" : "none",
+            }}
+            className="absolute inset-0"
+          >
+            <ProblemDetails
+              selectedProblem={selectedProblem}
+              isDarkMode={isDarkMode}
+              setProblemsVisible={setProblemsVisible}
+              buttonClass={buttonClass}
+              sidebarClass={sidebarClass}
+            />
+          </div>
+        </div>
+        
+        <div className="w-full h-full">
+          <Split
+            className="flex flex-col w-full h-full [&>*]:overflow-hidden"
+            sizes={[70, 30]}
+            minSize={100}
+            gutterSize={8}
+            direction="vertical"
+            gutterAlign="center"
+            snapOffset={30}
+            gutterClassName="bg-transparent hover:bg-gray-600 transition-all"
+          >
+            <EditorSection
+              selectedLang={selectedLang}
+              setSelectedLang={setSelectedLang}
+              code={code}
+              setCode={setCode}
+              isDarkMode={isDarkMode}
+              selectClass={selectClass}
+              editorClass={editorClass}
+              selectedProblem={selectedProblem}
+              languages={LANGUAGES}
+            />
+            <OutputSection
+              isDarkMode={isDarkMode}
+              selectedProblem={selectedProblem}
+              correct={correct}
+              outputClass={outputClass}
+              output={output}
+              testCases={testCases}
+              isRunning={isRunning}
+              contestScore={contestScore}
+            />
+          </Split>
+        </div>
       </Split>
 
       {showModal && (
