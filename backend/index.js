@@ -1,4 +1,3 @@
-
 import dotenv from "dotenv";
 import express from "express";
 import cors from "cors";
@@ -23,7 +22,7 @@ connectDB();
 app.use(cookieParser());
 app.use(
   cors({
-    origin: "https://algo-arena-hazel.vercel.app/",
+    origin: "https://algo-arena-lilac.vercel.app/",
     credentials: true,
     methods: ["GET", "POST"],
   })
