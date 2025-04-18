@@ -9,7 +9,7 @@ const ProtectedRoute = ({ children }) => {
     const checkAuth = async () => {
       try {
         // Backend call to verify the cookie
-        const response = await axios.get('http://localhost:5000/api/auth/verify', { withCredentials: true });
+        const response = await axios.get('https://algoarena-gp5i.onrender.com/api/auth/verify', { withCredentials: true });
         setIsAuthenticated(response.data.authenticated);
       } catch (error) {
         setIsAuthenticated(false);

@@ -76,7 +76,7 @@ const ContestRulesPage = () => {
   const handleConfirmRegister = async () => {
     try {
       const userId = currentUser.id || currentUser._id;
-      await axios.post(`http://localhost:5000/api/contests/register`, {
+      await axios.post(`https://algoarena-gp5i.onrender.com/api/contests/register`, {
         contestId: contest._id,
         userId: userId,
       });
@@ -100,7 +100,7 @@ const ContestRulesPage = () => {
   const handleUnregister = async () => {
     try {
       const userId = currentUser.id || currentUser._id;
-      await axios.post(`http://localhost:5000/api/contests/unregister`, {
+      await axios.post(`https://algoarena-gp5i.onrender.com/api/contests/unregister`, {
         contestId: contest._id,
         userId: userId,
       });
