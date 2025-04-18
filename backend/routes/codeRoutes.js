@@ -3,6 +3,7 @@ import express from "express";
 import axios from "axios";
 import { ContestResult, User, Question, Contest } from "../models/User.js"; // Ensure this file exports the updated ContestResult model
 import { middle } from "../middleware.js";
+import { checkContestStatus } from "../middleware/checkContestStatus.js";
 
 const router = express.Router();
 const JUDGE0_API = "http://localhost:2358";
@@ -86,7 +87,7 @@ router.post("/run-code", async (req, res) => {
   }
 });
 
-router.post("/submit-code", middle, async (req, res) => {
+router.post("/submit-code", middle, checkContestStatus ,async (req, res) => {
   const userId = req.userId; // after calling to middleware it attach authenticated useid to req object
 
   //extracting prop from body--it will come from frontend
@@ -111,15 +112,6 @@ router.post("/submit-code", middle, async (req, res) => {
       !contestId
     ) {
       return res.status(400).json({ error: "Missing required fields" });
-    }
-
-    //contest still active or not
-    const contest = await Contest.findById(contestId);
-    if (!contest || contest.status !== "current") {
-      console.log("contest not active");
-      return res.status(403).json({
-        message: "Submissions are disabled. This contest is not active.",
-      });
     }
 
     //it finds in db ki koi user ne ye contest submit kia hai ki nhi

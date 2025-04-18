@@ -161,7 +161,7 @@ const Code = () => {
               isDarkMode={isDarkMode}
             />
           </div>
-          
+
           <div
             style={{
               transition: "opacity 0.3s ease",
@@ -179,7 +179,7 @@ const Code = () => {
             />
           </div>
         </div>
-        
+
         <div className="w-full h-full">
           <Split
             className="flex flex-col w-full h-full [&>*]:overflow-hidden"
