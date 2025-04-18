@@ -20,7 +20,7 @@ const AppContent = () => {
   const location = useLocation();
   const { isDarkMode } = useTheme();
 
-  // Check if the navbar should be hidden
+  
   const hideNavbar =
     location.pathname === "/code" || /^\/code\/[^/]+$/.test(location.pathname);
 
