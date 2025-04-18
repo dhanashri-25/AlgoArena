@@ -5,12 +5,12 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-// SIGNUP
+
 export const signup = async (req, res) => {
   try {
     const { name, username, email, password, confirmpassword } = req.body;
 
-    // Validation
+    
     if (!name || !username || !email || !password || !confirmpassword) {
       return res
         .status(400)

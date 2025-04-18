@@ -22,7 +22,7 @@ connectDB();
 app.use(cookieParser());
 app.use(
   cors({
-    origin: "https://algo-arena-lilac.vercel.app/",
+    origin: "https://algo-arena-lilac.vercel.app",
     credentials: true,
     methods: ["GET", "POST"],
   })
