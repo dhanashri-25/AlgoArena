@@ -22,7 +22,7 @@ export const useProblemData = (id, setCode) => {
       }
 
       const response = await axios.get(
-        `http://localhost:5000/api/questions/${id}`
+        `https://algoarena-gp5i.onrender.com/api/questions/${id}`
       );
 
       if (response.status === 200 && response.data) {
@@ -47,7 +47,7 @@ export const useProblemData = (id, setCode) => {
   const getRandomProblems = async (contestId) => {
     try {
       const response = await fetch(
-        `http://localhost:5000/api/contests/contest/${contestId}`
+        `https://algoarena-gp5i.onrender.com/api/contests/contest/${contestId}`
       );
       const data = await response.json();
 
@@ -71,7 +71,6 @@ export const useProblemData = (id, setCode) => {
     }
   };
 
-
   //Determine which function to call based on the presence of an ID
   useEffect(() => {
     const fetchData = async () => {
@@ -92,10 +91,8 @@ export const useProblemData = (id, setCode) => {
     };
 
     fetchData();
-  }, [id]); 
+  }, [id]);
 
-
-  
   useEffect(() => {
     if (
       selectedProblem?.templateCode &&

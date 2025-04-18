@@ -18,12 +18,15 @@ const SignupPage = () => {
     e.preventDefault();
     const signupData = { name, username, email, password, confirmpassword };
     try {
-      const res = await fetch("http://localhost:5000/api/auth/signup", {
-        credentials: "include",
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(signupData),
-      });
+      const res = await fetch(
+        "https://algoarena-gp5i.onrender.com/api/auth/signup",
+        {
+          credentials: "include",
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(signupData),
+        }
+      );
       const result = await res.json();
       if (res.ok && result.success) {
         setData(result);

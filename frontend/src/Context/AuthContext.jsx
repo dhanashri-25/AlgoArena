@@ -10,9 +10,12 @@ export const AuthContextProvider = ({ children }) => {
   // Function to fetch and update the user details using axios
   const refreshAuth = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/auth/verify", {
-        withCredentials: true,
-      });
+      const res = await axios.get(
+        "https://algoarena-gp5i.onrender.com/api/auth/verify",
+        {
+          withCredentials: true,
+        }
+      );
       const result = res.data;
       if (result.authenticated) {
         setIsLoggedIn(true);

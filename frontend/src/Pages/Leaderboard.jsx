@@ -13,7 +13,7 @@ const Leaderboard = () => {
     const fetchRank = async () => {
       try {
         const res = await axios.get(
-          `http://localhost:5000/api/contest/leaderboard/${contestId}`
+          `https://algoarena-gp5i.onrender.com/api/contest/leaderboard/${contestId}`
         );
         console.log("Data from backend", res.data);
         setRanks(res.data);
@@ -30,7 +30,11 @@ const Leaderboard = () => {
   if (loading)
     return (
       <div className="flex justify-center items-center h-64">
-        <div className={`animate-pulse font-medium text-lg ${isDarkMode ? "text-indigo-300" : "text-indigo-600"}`}>
+        <div
+          className={`animate-pulse font-medium text-lg ${
+            isDarkMode ? "text-indigo-300" : "text-indigo-600"
+          }`}
+        >
           Loading leaderboard...
         </div>
       </div>
@@ -38,29 +42,30 @@ const Leaderboard = () => {
 
   // Custom styling for ranking
   const getRankDisplay = (rank) => {
-    const baseClasses = "flex items-center justify-center w-8 h-8 rounded-full font-bold";
-    
+    const baseClasses =
+      "flex items-center justify-center w-8 h-8 rounded-full font-bold";
+
     if (rank === 1) {
       return (
-        <div className={`${baseClasses} bg-yellow-400 text-yellow-800`}>
-          1
-        </div>
+        <div className={`${baseClasses} bg-yellow-400 text-yellow-800`}>1</div>
       );
     } else if (rank === 2) {
       return (
-        <div className={`${baseClasses} bg-gray-300 text-gray-700`}>
-          2
-        </div>
+        <div className={`${baseClasses} bg-gray-300 text-gray-700`}>2</div>
       );
     } else if (rank === 3) {
       return (
-        <div className={`${baseClasses} bg-amber-600 text-amber-100`}>
-          3
-        </div>
+        <div className={`${baseClasses} bg-amber-600 text-amber-100`}>3</div>
       );
     } else {
       return (
-        <div className={`${baseClasses} ${isDarkMode ? "bg-gray-700 text-gray-300" : "bg-gray-100 text-gray-600"}`}>
+        <div
+          className={`${baseClasses} ${
+            isDarkMode
+              ? "bg-gray-700 text-gray-300"
+              : "bg-gray-100 text-gray-600"
+          }`}
+        >
           {rank}
         </div>
       );
@@ -68,20 +73,22 @@ const Leaderboard = () => {
   };
 
   return (
-    <div className={`max-w-3xl mx-auto mt-8 p-6 rounded-xl shadow-lg ${
-      isDarkMode 
-        ? "bg-gray-800 bg-opacity-90 shadow-gray-900/40" 
-        : "bg-white shadow-gray-200"
-    }`}>
+    <div
+      className={`max-w-3xl mx-auto mt-8 p-6 rounded-xl shadow-lg ${
+        isDarkMode
+          ? "bg-gray-800 bg-opacity-90 shadow-gray-900/40"
+          : "bg-white shadow-gray-200"
+      }`}
+    >
       <div className="mb-8 text-center">
-        <h2 className={`text-3xl font-bold ${
-          isDarkMode ? "text-gray-100" : "text-gray-800"
-        }`}>
+        <h2
+          className={`text-3xl font-bold ${
+            isDarkMode ? "text-gray-100" : "text-gray-800"
+          }`}
+        >
           🏆 Contest Leaderboard
         </h2>
-        <p className={`mt-2 ${
-          isDarkMode ? "text-gray-400" : "text-gray-500"
-        }`}>
+        <p className={`mt-2 ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>
           Top performers in this challenge
         </p>
       </div>
@@ -90,24 +97,32 @@ const Leaderboard = () => {
         <table className="w-full border-collapse">
           <thead>
             <tr className={isDarkMode ? "bg-gray-700" : "bg-gray-50"}>
-              <th className={`p-4 text-left font-semibold ${
-                isDarkMode ? "text-gray-200" : "text-gray-700"
-              }`}>
+              <th
+                className={`p-4 text-left font-semibold ${
+                  isDarkMode ? "text-gray-200" : "text-gray-700"
+                }`}
+              >
                 Rank
               </th>
-              <th className={`p-4 text-left font-semibold ${
-                isDarkMode ? "text-gray-200" : "text-gray-700"
-              }`}>
+              <th
+                className={`p-4 text-left font-semibold ${
+                  isDarkMode ? "text-gray-200" : "text-gray-700"
+                }`}
+              >
                 Participant
               </th>
-              <th className={`p-4 text-left font-semibold ${
-                isDarkMode ? "text-gray-200" : "text-gray-700"
-              }`}>
+              <th
+                className={`p-4 text-left font-semibold ${
+                  isDarkMode ? "text-gray-200" : "text-gray-700"
+                }`}
+              >
                 Score
               </th>
-              <th className={`p-4 text-left font-semibold ${
-                isDarkMode ? "text-gray-200" : "text-gray-700"
-              }`}>
+              <th
+                className={`p-4 text-left font-semibold ${
+                  isDarkMode ? "text-gray-200" : "text-gray-700"
+                }`}
+              >
                 Time (s)
               </th>
             </tr>
@@ -122,12 +137,12 @@ const Leaderboard = () => {
                     : "border-b border-gray-100 hover:bg-gray-50"
                 } transition-all duration-200`}
               >
-                <td className="p-4">
-                  {getRankDisplay(rank.rank)}
-                </td>
-                <td className={`p-4 ${
-                  isDarkMode ? "text-gray-200" : "text-gray-800"
-                }`}>
+                <td className="p-4">{getRankDisplay(rank.rank)}</td>
+                <td
+                  className={`p-4 ${
+                    isDarkMode ? "text-gray-200" : "text-gray-800"
+                  }`}
+                >
                   <div className="flex items-center gap-3">
                     {rank.profilePic ? (
                       <img
@@ -137,10 +152,14 @@ const Leaderboard = () => {
                         ${isDarkMode ? 'border-gray-600' : 'border-gray-200'}"
                       />
                     ) : (
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg font-medium shadow-sm
-                        ${isDarkMode 
-                          ? 'bg-gray-600 text-gray-200 border border-gray-500' 
-                          : 'bg-gray-200 text-gray-700 border border-gray-300'}`}>
+                      <div
+                        className={`w-10 h-10 rounded-full flex items-center justify-center text-lg font-medium shadow-sm
+                        ${
+                          isDarkMode
+                            ? "bg-gray-600 text-gray-200 border border-gray-500"
+                            : "bg-gray-200 text-gray-700 border border-gray-300"
+                        }`}
+                      >
                         {rank.username?.charAt(0).toUpperCase()}
                       </div>
                     )}
@@ -149,23 +168,29 @@ const Leaderboard = () => {
                     </div>
                   </div>
                 </td>
-                <td className={`p-4 font-medium ${
-                  isDarkMode ? "text-emerald-400" : "text-emerald-600"
-                }`}>
+                <td
+                  className={`p-4 font-medium ${
+                    isDarkMode ? "text-emerald-400" : "text-emerald-600"
+                  }`}
+                >
                   {rank.score}
                 </td>
-                <td className={`p-4 ${
-                  isDarkMode ? "text-gray-300" : "text-gray-600"
-                }`}>
+                <td
+                  className={`p-4 ${
+                    isDarkMode ? "text-gray-300" : "text-gray-600"
+                  }`}
+                >
                   {rank.totalTime}s
                 </td>
               </tr>
             ))}
             {ranks.length === 0 && (
               <tr>
-                <td 
-                  colSpan="4" 
-                  className={`p-8 text-center ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}
+                <td
+                  colSpan="4"
+                  className={`p-8 text-center ${
+                    isDarkMode ? "text-gray-400" : "text-gray-500"
+                  }`}
                 >
                   No participants in the leaderboard yet
                 </td>

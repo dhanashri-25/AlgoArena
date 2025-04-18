@@ -36,12 +36,15 @@ export const useCodeSubmission = () => {
     };
 
     try {
-      const response = await fetch("http://localhost:5000/api/code/run-code", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(requestData),
-      });
+      const response = await fetch(
+        "https://algoarena-gp5i.onrender.com/api/code/run-code",
+        {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(requestData),
+        }
+      );
       const result = await response.json();
       console.log(result);
       if (!Array.isArray(result.results))
@@ -126,7 +129,7 @@ export const useCodeSubmission = () => {
 
     try {
       const response = await fetch(
-        "http://localhost:5000/api/code/submit-code",
+        "https://algoarena-gp5i.onrender.com/api/code/submit-code",
         {
           method: "POST",
           credentials: "include",
