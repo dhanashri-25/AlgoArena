@@ -5,12 +5,10 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-
 export const signup = async (req, res) => {
   try {
     const { name, username, email, password, confirmpassword } = req.body;
 
-    
     if (!name || !username || !email || !password || !confirmpassword) {
       return res
         .status(400)
@@ -51,7 +49,7 @@ export const signup = async (req, res) => {
     // Set cookie
     res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: true,
       sameSite: "strict",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
@@ -59,7 +57,11 @@ export const signup = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Signup successful",
-      data: { name: newUser.name, email: newUser.email , username: newUser.username },
+      data: {
+        name: newUser.name,
+        email: newUser.email,
+        username: newUser.username,
+      },
     });
   } catch (error) {
     res.status(500).json({
@@ -104,7 +106,7 @@ export const login = async (req, res) => {
 
     res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: true,
       sameSite: "strict",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
@@ -128,7 +130,7 @@ export const logout = (req, res) => {
   try {
     res.clearCookie("token", {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: true,
       sameSite: "strict",
     });
 

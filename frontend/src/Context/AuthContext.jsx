@@ -7,7 +7,6 @@ export const AuthContextProvider = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [data, setData] = useState(null);
 
-  // Function to fetch and update the user details using axios
   const refreshAuth = async () => {
     try {
       const res = await axios.get(
@@ -17,21 +16,27 @@ export const AuthContextProvider = ({ children }) => {
         }
       );
       const result = res.data;
+
+      console.log("result", result);
+
       if (result.authenticated) {
         setIsLoggedIn(true);
         setData(result.user || {});
+
+        console.log("inside", result.authenticated);
       } else {
         setIsLoggedIn(false);
         setData(null);
+
+        console.log("outside in else");
       }
     } catch (error) {
-      console.error("Error verifying user:", error);
+      console.error("Error verifying user---catch:", error);
       setIsLoggedIn(false);
       setData(null);
     }
   };
 
-  // Run the refresh when the component mounts
   useEffect(() => {
     refreshAuth();
   }, []);
