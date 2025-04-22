@@ -1,120 +1,65 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import * as blazeface from "@tensorflow-models/blazeface";
 import "@tensorflow/tfjs";
-import { AlertTriangle, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { X } from "lucide-react";
 
-const DetectMultipleFaces = ({ onViolationDetected, isDarkMode = true }) => {
+const DetectMultipleFaces = ({ videoElement, isDarkMode = true }) => {
   const [showModal, setShowModal] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
   const [warningCount, setWarningCount] = useState(0);
-  const [model, setModel] = useState(null);
-  const videoRef = useRef(null);
-  const intervalRef = useRef(null);
+  const navigate = useNavigate();
 
-  // Load the model once when component mounts
   useEffect(() => {
-    const loadModel = async () => {
-      try {
-        const loadedModel = await blazeface.load();
-        setModel(loadedModel);
-        console.log("Face detection model loaded successfully");
-      } catch (error) {
-        console.error("Failed to load face detection model:", error);
-      }
-    };
-    
-    loadModel();
-    
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, []);
-
-  // Start detection when both model and video stream are ready
-  useEffect(() => {
-    if (!model || !videoRef.current?.srcObject) return;
-
     const detectFaces = async () => {
-      try {
-        const predictions = await model.estimateFaces(videoRef.current, false);
-        
-        if (predictions && predictions.length >= 2 && !showModal) {
+      if (!videoElement) return;
+      const model = await blazeface.load();
+      const interval = setInterval(async () => {
+        const predictions = await model.estimateFaces(videoElement, false);
+        if (predictions.length >= 2 && !showModal) {
           if (warningCount === 0) {
-            setModalMessage("⚠️ Multiple faces detected! Please ensure only one face is present.");
+            setModalMessage("⚠ Multiple faces detected! Please ensure only one face is present before submitting.");
             setShowModal(true);
             setWarningCount(1);
-          } else if (warningCount >= 1) {
-            setModalMessage("Multiple people detected! This is considered cheating.");
+          } else if (warningCount === 1) {
+            setModalMessage("Cheating detected: Multiple faces found! Auto-submitting...");
             setShowModal(true);
-            setWarningCount((prev) => prev + 1);
-            
-            if (warningCount >= 2) {
-              // Notify parent component about the violation
-              onViolationDetected("multiple_faces");
-            }
+            setWarningCount(2);
+            clearInterval(interval);
+            setTimeout(() => {
+              navigate("/submit");
+            }, 3000);
           }
         }
-      } catch (error) {
-        console.error("Error detecting faces:", error);
-      }
+      }, 2000);
+      return () => clearInterval(interval);
     };
+    detectFaces();
+  }, [videoElement, showModal, warningCount, navigate]);
 
-    // Run detection every 2 seconds
-    intervalRef.current = setInterval(detectFaces, 2000);
-    
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, [model, videoRef.current?.srcObject, warningCount, showModal, onViolationDetected]);
-
-  // Connect the video stream when available
-  const connectVideoStream = (stream) => {
-    if (videoRef.current) {
-      videoRef.current.srcObject = stream;
-    }
+  const handleProceed = () => {
+    navigate("/submit");
   };
 
   return (
     <>
-      {/* Hidden video element for detection */}
-      <video 
-        ref={videoRef}
-        autoPlay 
-        playsInline
-        muted
-        className="absolute opacity-0 pointer-events-none"
-        style={{ height: "240px", width: "320px" }}
-      />
-      
-      {/* Warning Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className={`${isDarkMode ? "bg-gray-800 text-white" : "bg-white text-gray-800"} p-6 rounded-lg shadow-lg max-w-md w-full`}>
+          <div className={`${isDarkMode ? "bg-[#1e1e1e] text-white" : "bg-white text-gray-800"} p-6 rounded-lg shadow-lg max-w-md w-full`}>
             <div className="flex justify-between items-center mb-4">
-              <div className="flex items-center">
-                <AlertTriangle className="text-red-500 mr-2" size={24} />
-                <h3 className="text-xl font-bold">Warning</h3>
-              </div>
-              <button 
-                onClick={() => setShowModal(false)} 
-                className="text-gray-400 hover:text-gray-600"
-              >
+              <h3 className="text-xl font-bold">CodeJudge</h3>
+              <button onClick={() => setShowModal(false)} className="text-gray-500 hover:text-gray-700">
                 <X size={20} />
               </button>
             </div>
             <div className="py-4">{modalMessage}</div>
-            <div className="flex justify-end">
-              <button 
-                onClick={() => setShowModal(false)} 
-                className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
-              >
-                I Understand
-              </button>
-            </div>
+            {warningCount < 2 && (
+              <div className="flex justify-end">
+                <button onClick={handleProceed} className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600">
+                  Proceed to Submit
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
