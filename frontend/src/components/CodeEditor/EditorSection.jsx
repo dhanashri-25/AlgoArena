@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import Editor from "@monaco-editor/react";
 
 const EditorSection = ({
@@ -13,28 +13,22 @@ const EditorSection = ({
   setSelectedLang,
 }) => {
   const handleEditorDidMount = (editor, monaco) => {
-    // Prevent paste operations
+    // Prevent paste operations using a safer approach
     editor.onKeyDown((e) => {
       // Check for Ctrl+V or Command+V
       if ((e.ctrlKey || e.metaKey) && e.code === "KeyV") {
         e.preventDefault();
         e.stopPropagation();
+        return false;
       }
     });
 
-    // Alternative approach to block paste
-    editor.createContextKey("noPaste", true);
-    const pasteAction = editor.getAction("editor.action.clipboardPasteAction");
-    if (pasteAction) {
-      pasteAction.dispose();
-    }
-
-    // Blocking pasting through context menu
-    editor._standaloneKeybindingService.addDynamicKeybinding(
-      "-editor.action.clipboardPasteAction"
-    );
+    // Disable context menu to prevent right-click paste
+    editor.onContextMenu((e) => {
+      e.preventDefault();
+      return false;
+    });
   };
-
   return (
     <div className={`flex flex-col ${editorClass} h-full`}>
       <div className="w-full p-2 flex items-center justify-between">
@@ -70,7 +64,7 @@ const EditorSection = ({
           tabSize: 2,
           scrollBeyondLastLine: false,
           automaticLayout: true,
-          contextmenu: false,
+          contextmenu: false, // Disable context menu
         }}
       />
     </div>
