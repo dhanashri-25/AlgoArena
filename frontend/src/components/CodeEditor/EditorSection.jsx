@@ -34,7 +34,7 @@ const EditorSection = ({
       "-editor.action.clipboardPasteAction"
     );
   };
-  
+
   return (
     <div className={`flex flex-col ${editorClass} h-full`}>
       <div className="w-full p-2 flex items-center justify-between">
@@ -63,12 +63,14 @@ const EditorSection = ({
         value={code}
         onChange={(value) => setCode(value)}
         theme={isDarkMode ? "vs-dark" : "light"}
+        onMount={handleEditorDidMount}
         options={{
           minimap: { enabled: false },
           fontSize: 14,
           tabSize: 2,
           scrollBeyondLastLine: false,
           automaticLayout: true,
+          contextmenu: false,
         }}
       />
     </div>
