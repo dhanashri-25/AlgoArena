@@ -12,6 +12,29 @@ const EditorSection = ({
   languages,
   setSelectedLang,
 }) => {
+  const handleEditorDidMount = (editor, monaco) => {
+    // Prevent paste operations
+    editor.onKeyDown((e) => {
+      // Check for Ctrl+V or Command+V
+      if ((e.ctrlKey || e.metaKey) && e.code === "KeyV") {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    });
+
+    // Alternative approach to block paste
+    editor.createContextKey("noPaste", true);
+    const pasteAction = editor.getAction("editor.action.clipboardPasteAction");
+    if (pasteAction) {
+      pasteAction.dispose();
+    }
+
+    // Blocking pasting through context menu
+    editor._standaloneKeybindingService.addDynamicKeybinding(
+      "-editor.action.clipboardPasteAction"
+    );
+  };
+  
   return (
     <div className={`flex flex-col ${editorClass} h-full`}>
       <div className="w-full p-2 flex items-center justify-between">
