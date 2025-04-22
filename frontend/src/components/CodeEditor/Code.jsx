@@ -11,12 +11,16 @@ import { useTheme } from "../../hooks/useTheme.jsx";
 import { useCodeSubmission } from "../../hooks/useCodeSubmission.jsx";
 import { useProblemData } from "../../hooks/useProblemData.jsx";
 import { LANGUAGES } from "../../constants/editorConstants.js";
+import VideoFeed from "../VideoFeed.jsx";
+import DetectMultipleFaces from "../DetectMultipleFaces.jsx";
+import DetectMobile from "../DetectMobile.jsx";
 
 const Code = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const [contestScore, setContestScore] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [videoElement, setVideoElement] = useState(null);
 
   const handleFinalSubmit = async () => {
     try {
@@ -132,6 +136,12 @@ const Code = () => {
         headerClass={headerClass}
         isContestMode={isContestMode}
       />
+
+      <div>
+        <VideoFeed onStreamReady={setVideoElement} />
+        <DetectMultipleFaces videoElement={videoElement} />
+        <DetectMobile videoElement={videoElement} />
+      </div>
 
       <Split
         className="flex h-[calc(100vh-70px)] [&>*]:overflow-hidden scrollbar-hide"
