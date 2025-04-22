@@ -12,32 +12,41 @@ const EditorSection = ({
   languages,
   setSelectedLang,
 }) => {
-  const handleEditorDidMount = (editor, monaco) => {
-    // Prevent paste operations using a safer approach
-    editor.onKeyDown((e) => {
-      // Check for Ctrl+V or Command+V
-      if ((e.ctrlKey || e.metaKey) && e.code === "KeyV") {
-        e.preventDefault();
-        e.stopPropagation();
-        return false;
-      }
-    });
+  // Global paste prevention when the editor is focused
+  useEffect(() => {
+    const preventPaste = (e) => {
+      e.preventDefault();
+      return false;
+    };
 
-    // Disable context menu to prevent right-click paste
+    // Add global paste prevention
+    window.addEventListener("paste", preventPaste, true);
+
+    return () => {
+      window.removeEventListener("paste", preventPaste, true);
+    };
+  }, []);
+
+  const handleEditorDidMount = (editor, monaco) => {
+    // Just disable context menu
     editor.onContextMenu((e) => {
       e.preventDefault();
       return false;
     });
   };
+
   return (
     <div className={`flex flex-col ${editorClass} h-full`}>
+      {/* Rest of the component remains the same */}
       <div className="w-full p-2 flex items-center justify-between">
         <select
           className={`${selectClass} px-4 py-2 rounded-md w-48`}
           value={selectedLang}
           onChange={(e) => {
             setSelectedLang(e.target.value);
-            setCode(selectedProblem.templateCode[e.target.value]);
+            if (selectedProblem?.templateCode) {
+              setCode(selectedProblem.templateCode[e.target.value] || "");
+            }
           }}
         >
           {languages.map((lang) => (
