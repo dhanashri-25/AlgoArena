@@ -1,12 +1,13 @@
 // routes/codeRoutes.js
 import express from "express";
 import axios from "axios";
-import { ContestResult, User, Question, Contest } from "../models/User.js"; // Ensure this file exports the updated ContestResult model
+import { ContestResult, User, Question, Contest } from "../models/User.js";
 import { middle } from "../middleware.js";
 import { checkContestStatus } from "../middleware/checkContestStatus.js";
 
 const router = express.Router();
-const JUDGE0_API = "http://localhost:2358";
+
+const JUDGE0_API = process.env.JUDGE0_API;
 
 // Route for running code (test runs, no contest state changes)
 router.post("/run-code", async (req, res) => {
@@ -17,11 +18,9 @@ router.post("/run-code", async (req, res) => {
     }
     const results = [];
 
-    // Test only a subset (first two test cases)
     for (let i = 0; i < Math.min(2, testCases.length); i++) {
       const tc = testCases[i];
 
-      // Build input object from test case input array
       const inputObject = Object.fromEntries(
         tc.input.reduce((acc, val, index, arr) => {
           if (index % 2 === 0) {
@@ -31,10 +30,8 @@ router.post("/run-code", async (req, res) => {
         }, [])
       );
 
-      // Prepare the source code by replacing placeholders with actual values
       let finalSourceCode = wrapCode;
       Object.entries(inputObject).forEach(([key, value]) => {
-        // Replace [ ] with { } for non-C++ language (or when language_id !== 71)
         if (
           value.startsWith("[") &&
           value.endsWith("]") &&
@@ -48,13 +45,12 @@ router.post("/run-code", async (req, res) => {
         );
       });
 
-      // Assemble the complete source code (order may vary based on language)
       const source_code =
         language_id !== 71
           ? finalSourceCode + "\n" + code
           : code + "\n" + finalSourceCode;
 
-      // Send submission request to Judge0 API
+      // Submit code to Judge0 API
       const submission = await axios.post(
         `${JUDGE0_API}/submissions?base64_encoded=false&wait=false`,
         {
@@ -64,33 +60,46 @@ router.post("/run-code", async (req, res) => {
           cpu_time_limit: 2,
           memory_limit: 128000,
         },
-        { headers: { "Content-Type": "application/json" } }
+        {
+          headers: {
+            "Content-Type": "application/json",
+            "X-RapidAPI-Host": process.env.JUDGE0_HOST || "", // optional if using RapidAPI
+            "X-RapidAPI-Key": process.env.JUDGE0_KEY || "",  // optional if using RapidAPI
+          },
+        }
       );
 
       const token = submission.data.token;
       let result;
-      // Poll for the result until it is ready
+
       while (true) {
         result = await axios.get(
           `${JUDGE0_API}/submissions/${token}?base64_encoded=false`,
-          { headers: { "Content-Type": "application/json" } }
+          {
+            headers: {
+              "Content-Type": "application/json",
+              "X-RapidAPI-Host": process.env.JUDGE0_HOST || "",
+              "X-RapidAPI-Key": process.env.JUDGE0_KEY || "",
+            },
+          }
         );
         if (result.data.status.id >= 3) break;
         await new Promise((r) => setTimeout(r, 1000));
       }
+
       results.push(result.data);
     }
 
     res.json({ results, success: true });
   } catch (error) {
+    console.error(error.response?.data || error.message);
     res.status(500).json({ error: error.message });
   }
 });
 
-router.post("/submit-code", middle, checkContestStatus ,async (req, res) => {
-  const userId = req.userId; // after calling to middleware it attach authenticated useid to req object
+router.post("/submit-code", middle, checkContestStatus, async (req, res) => {
+  const userId = req.userId;
 
-  //extracting prop from body--it will come from frontend
   try {
     const {
       language,
@@ -103,24 +112,15 @@ router.post("/submit-code", middle, checkContestStatus ,async (req, res) => {
       problemId,
     } = req.body;
 
-    if (
-      !code ||
-      !language ||
-      !testCases ||
-      !Array.isArray(testCases) ||
-      !problemId ||
-      !contestId
-    ) {
+    if (!code || !language || !testCases || !Array.isArray(testCases) || !problemId || !contestId) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
-    //it finds in db ki koi user ne ye contest submit kia hai ki nhi
     let contestResult = await ContestResult.findOne({
       user: userId,
       contest: contestId,
     });
 
-    //if there is no contestresult in db then make default
     const today = new Date();
     today.setHours(8, 0, 0, 0);
     if (!contestResult) {
@@ -133,11 +133,11 @@ router.post("/submit-code", middle, checkContestStatus ,async (req, res) => {
         questionSubmissionTimes: [],
         startTime: today,
       });
-      console.log("default contest formed after clicking on submit");
+      console.log("Default contest formed after clicking on submit");
     }
 
-    await contestResult.save(); //saving new contest result to db
-    console.log("new contest result saved after submitting 1 question");
+    await contestResult.save();
+    console.log("New contest result saved after submitting 1 question");
 
     const alreadySolved = contestResult.solvedQuestions.some(
       (qid) => String(qid) === String(problemId)
@@ -189,18 +189,31 @@ router.post("/submit-code", middle, checkContestStatus ,async (req, res) => {
           cpu_time_limit: 2,
           memory_limit: 128000,
         },
-        { headers: { "Content-Type": "application/json" } }
+        {
+          headers: {
+            "Content-Type": "application/json",
+            "X-RapidAPI-Host": process.env.JUDGE0_HOST || "", // if needed
+            "X-RapidAPI-Key": process.env.JUDGE0_KEY || "",   // if needed
+          },
+        }
       );
 
       const token = submission.data.token;
       let result;
+
       while (true) {
         result = await axios.get(
           `${JUDGE0_API}/submissions/${token}?base64_encoded=false`,
-          { headers: { "Content-Type": "application/json" } }
+          {
+            headers: {
+              "Content-Type": "application/json",
+              "X-RapidAPI-Host": process.env.JUDGE0_HOST || "",
+              "X-RapidAPI-Key": process.env.JUDGE0_KEY || "",
+            },
+          }
         );
         if (result.data.status.id >= 3) break;
-        await new Promise((r) => setTimeout(r, 1000));
+        await new Promise((r) => setTimeout(r, 1000)); // 1 second wait
       }
 
       if (result.data.status.description !== "Accepted") {
@@ -212,13 +225,13 @@ router.post("/submit-code", middle, checkContestStatus ,async (req, res) => {
 
     const diffInMs = new Date() - contestResult.startTime;
     const diffInMinutes = Math.floor(diffInMs / 60000);
-    console.log("this is diffin min", diffInMinutes);
+    console.log("this is diff in min", diffInMinutes);
 
     const updateResult = await ContestResult.findOneAndUpdate(
       {
         user: userId,
         contest: contestId,
-        solvedQuestions: { $ne: problemId }, //$-->in mongodb means does not contain problemId already in db
+        solvedQuestions: { $ne: problemId },
       },
       {
         $inc: { score: score || 5 },
@@ -241,7 +254,6 @@ router.post("/submit-code", middle, checkContestStatus ,async (req, res) => {
       });
     }
 
-    //updating userschema
     const user = await User.findById(userId);
     user.contestHistory.push(contestResult._id);
     user.contestsParticipated.push(contestId);
@@ -262,7 +274,7 @@ router.post("/submit-code", middle, checkContestStatus ,async (req, res) => {
       score: updateResult.score,
     });
   } catch (error) {
-    console.error("Error in /api/submit-code:", error);
+    console.error("Error in /api/submit-code:", error.response?.data || error.message);
     res.status(500).json({ error: error.message });
   }
 });

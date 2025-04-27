@@ -107,7 +107,7 @@ cron.schedule("0-14 8 * * *", async () => {
 });
 
 // Job 2: Runs at 10 AM to mark today's current contest as completed.
-cron.schedule("0 0 10 * * *", async () => {
+cron.schedule("0-14 10 * * *", async () => {
   try {
     console.log("Job 2 (10 AM): Ending today's contest.");
     const todayContestTime = getTodayAtHour(8); // Today's contest started at 8 AM.
