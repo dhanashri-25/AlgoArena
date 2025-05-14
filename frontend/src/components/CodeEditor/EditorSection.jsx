@@ -12,7 +12,6 @@ const EditorSection = ({
   languages,
   setSelectedLang,
 }) => {
-  // Global paste prevention when the editor is focused
   useEffect(() => {
     const preventPaste = (e) => {
       e.preventDefault();
@@ -21,26 +20,41 @@ const EditorSection = ({
 
     // Add global paste prevention
     window.addEventListener("paste", preventPaste, true);
+    window.addEventListener("copy", preventPaste, true);
 
     return () => {
       window.removeEventListener("paste", preventPaste, true);
+      window.removeEventListener("copy", preventPaste, true);
     };
   }, []);
 
   const handleEditorDidMount = (editor, monaco) => {
-    // Just disable context menu
+    // Disable context menu
     editor.onContextMenu((e) => {
       e.preventDefault();
       return false;
     });
+
+    // Disable paste
+    editor.onPaste((e) => {
+      e.event.preventDefault();
+      e.event.stopPropagation();
+    });
+
+    // Disable copy
+    editor.onKeyDown((e) => {
+      if ((e.ctrlKey || e.metaKey) && e.code === "KeyC") {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    });
   };
 
   return (
-    <div className={`flex flex-col ${editorClass} h-full`}>
-      {/* Rest of the component remains the same */}
+    <div className={flex flex-col ${editorClass} h-full}>
       <div className="w-full p-2 flex items-center justify-between">
         <select
-          className={`${selectClass} px-4 py-2 rounded-md w-48`}
+          className={${selectClass} px-4 py-2 rounded-md w-48}
           value={selectedLang}
           onChange={(e) => {
             setSelectedLang(e.target.value);
@@ -57,9 +71,10 @@ const EditorSection = ({
         </select>
 
         <div className="text-sm opacity-70">
-          {selectedProblem && `Problem: ${selectedProblem.title}`}
+          {selectedProblem && Problem: ${selectedProblem.title}}
         </div>
       </div>
+
       <Editor
         height="100%"
         language={selectedLang.toLowerCase()}
@@ -73,7 +88,7 @@ const EditorSection = ({
           tabSize: 2,
           scrollBeyondLastLine: false,
           automaticLayout: true,
-          contextmenu: false, // Disable context menu
+          contextmenu: false,
         }}
       />
     </div>
