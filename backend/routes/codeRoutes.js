@@ -7,7 +7,7 @@ import { checkContestStatus } from "../middleware/checkContestStatus.js";
 
 const router = express.Router();
 
-const JUDGE0_API = process.env.JUDGE0_API;
+const JUDGE0_API = `https://judge0-ce.p.rapidapi.com`;
 
 // Route for running code (test runs, no contest state changes)
 router.post("/run-code", async (req, res) => {
@@ -63,8 +63,9 @@ router.post("/run-code", async (req, res) => {
         {
           headers: {
             "Content-Type": "application/json",
-            "X-RapidAPI-Host": process.env.JUDGE0_HOST || "", // optional if using RapidAPI
-            "X-RapidAPI-Key": process.env.JUDGE0_KEY || "",  // optional if using RapidAPI
+            "X-RapidAPI-Host": `judge0-ce.p.rapidapi.com` || "", // optional if using RapidAPI
+            "X-RapidAPI-Key":
+              `7fb0c2fe04msh3281c555f84c91bp182f90jsn55ee78060ffd` || "", // optional if using RapidAPI
           },
         }
       );
@@ -78,8 +79,9 @@ router.post("/run-code", async (req, res) => {
           {
             headers: {
               "Content-Type": "application/json",
-              "X-RapidAPI-Host": process.env.JUDGE0_HOST || "",
-              "X-RapidAPI-Key": process.env.JUDGE0_KEY || "",
+              "X-RapidAPI-Host": `judge0-ce.p.rapidapi.com` || "",
+              "X-RapidAPI-Key":
+                `7fb0c2fe04msh3281c555f84c91bp182f90jsn55ee78060ffd` || "",
             },
           }
         );
@@ -112,7 +114,14 @@ router.post("/submit-code", middle, checkContestStatus, async (req, res) => {
       problemId,
     } = req.body;
 
-    if (!code || !language || !testCases || !Array.isArray(testCases) || !problemId || !contestId) {
+    if (
+      !code ||
+      !language ||
+      !testCases ||
+      !Array.isArray(testCases) ||
+      !problemId ||
+      !contestId
+    ) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
@@ -192,8 +201,9 @@ router.post("/submit-code", middle, checkContestStatus, async (req, res) => {
         {
           headers: {
             "Content-Type": "application/json",
-            "X-RapidAPI-Host": process.env.JUDGE0_HOST || "", // if needed
-            "X-RapidAPI-Key": process.env.JUDGE0_KEY || "",   // if needed
+            "X-RapidAPI-Host": `judge0-ce.p.rapidapi.com` || "", // if needed
+            "X-RapidAPI-Key":
+              `7fb0c2fe04msh3281c555f84c91bp182f90jsn55ee78060ffd` || "", // if needed
           },
         }
       );
@@ -207,8 +217,9 @@ router.post("/submit-code", middle, checkContestStatus, async (req, res) => {
           {
             headers: {
               "Content-Type": "application/json",
-              "X-RapidAPI-Host": process.env.JUDGE0_HOST || "",
-              "X-RapidAPI-Key": process.env.JUDGE0_KEY || "",
+              "X-RapidAPI-Host": `judge0-ce.p.rapidapi.com` || "",
+              "X-RapidAPI-Key":
+                `7fb0c2fe04msh3281c555f84c91bp182f90jsn55ee78060ffd` || "",
             },
           }
         );
@@ -274,7 +285,10 @@ router.post("/submit-code", middle, checkContestStatus, async (req, res) => {
       score: updateResult.score,
     });
   } catch (error) {
-    console.error("Error in /api/submit-code:", error.response?.data || error.message);
+    console.error(
+      "Error in /api/submit-code:",
+      error.response?.data || error.message
+    );
     res.status(500).json({ error: error.message });
   }
 });
