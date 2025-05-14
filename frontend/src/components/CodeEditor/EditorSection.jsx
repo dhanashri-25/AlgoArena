@@ -12,42 +12,35 @@ const EditorSection = ({
   languages,
   setSelectedLang,
 }) => {
+  // Prevent global copy/paste/cut
   useEffect(() => {
-    const preventPaste = (e) => {
+    const preventEvent = (e) => {
       e.preventDefault();
       return false;
     };
 
-    // Add global paste prevention
-    window.addEventListener("paste", preventPaste, true);
-    window.addEventListener("copy", preventPaste, true);
+    window.addEventListener("paste", preventEvent, true);
+    window.addEventListener("copy", preventEvent, true);
+    window.addEventListener("cut", preventEvent, true);
 
     return () => {
-      window.removeEventListener("paste", preventPaste, true);
-      window.removeEventListener("copy", preventPaste, true);
+      window.removeEventListener("paste", preventEvent, true);
+      window.removeEventListener("copy", preventEvent, true);
+      window.removeEventListener("cut", preventEvent, true);
     };
   }, []);
 
   const handleEditorDidMount = (editor, monaco) => {
-    // Disable context menu
+    // Disable right-click context menu
     editor.onContextMenu((e) => {
       e.preventDefault();
       return false;
     });
 
-    // Disable paste
-    editor.onPaste((e) => {
-      e.event.preventDefault();
-      e.event.stopPropagation();
-    });
-
-    // Disable copy
-    editor.onKeyDown((e) => {
-      if ((e.ctrlKey || e.metaKey) && e.code === "KeyC") {
-        e.preventDefault();
-        e.stopPropagation();
-      }
-    });
+    // Block Ctrl/Cmd+C, Ctrl/Cmd+V, Ctrl/Cmd+X inside Monaco
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyC, () => {});
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyV, () => {});
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyX, () => {});
   };
 
   return (
