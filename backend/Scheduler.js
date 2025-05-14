@@ -15,7 +15,7 @@ function getTomorrowAtHour(hour) {
 }
 
 // Job 1: Run every minute from 8:00 to 8:14 AM (if needed)
-cron.schedule("0-14 8 * * *", async () => {
+cron.schedule("0-20 8 * * *", async () => {
   try {
     console.log("Job 1 (8 AM window): Starting daily contest processing.");
 
