@@ -51,10 +51,10 @@ const EditorSection = ({
   };
 
   return (
-    <div className={flex flex-col ${editorClass} h-full}>
+    <div className={`flex flex-col ${editorClass} h-full`}>
       <div className="w-full p-2 flex items-center justify-between">
         <select
-          className={${selectClass} px-4 py-2 rounded-md w-48}
+          className={`${selectClass} px-4 py-2 rounded-md w-48`}
           value={selectedLang}
           onChange={(e) => {
             setSelectedLang(e.target.value);
@@ -71,7 +71,7 @@ const EditorSection = ({
         </select>
 
         <div className="text-sm opacity-70">
-          {selectedProblem && Problem: ${selectedProblem.title}}
+          {selectedProblem && `Problem: ${selectedProblem.title}`}
         </div>
       </div>
 
